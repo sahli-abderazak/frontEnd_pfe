@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { DashboardHeader } from "../components/dashboard-header"
 import { DashboardSidebar } from "../components/dashboard-sidebar"
-import { ReviewsTabs } from "../components/employee/employee-tabs"
-import { AddRecruiterForm } from "../components/employee/add-recruiter-form"
+import { ReviewsTabs } from "../components/archive/archive_tabs"
+import { TemoiniagesTabs } from "../components/temoiniage/temoiniage_tabs"
+import { ContactsTabs } from "../components/contact_admin/contact_tabs"
 
 export default function ReviewsPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(false)
@@ -29,14 +30,14 @@ export default function ReviewsPage() {
           <div className="md:col-span-5 lg:col-span-5 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Recruteurs</h1>
-                <p className="text-muted-foreground">Gérer et suivre les recruteurs</p>
+                <h1 className="text-3xl font-bold tracking-tight">Les messages des clients et candidats</h1>
+                <p className="text-muted-foreground">Suivre les messages des autres.</p>
               </div>
-              {/* <AddRecruiterForm onRecruiterAdded={handleRecruiterAdded} /> */}
+              
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-              <ReviewsTabs refreshTrigger={refreshTrigger} />
+              <ContactsTabs refreshTrigger={refreshTrigger} />
             </div>
           </div>
         </div>
@@ -44,4 +45,3 @@ export default function ReviewsPage() {
     </div>
   )
 }
-

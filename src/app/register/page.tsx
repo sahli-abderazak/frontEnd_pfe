@@ -1,18 +1,19 @@
 "use client"
 
-import React from "react";
+import type React from "react"
+
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Lock, Mail, Loader2, AlertCircle, User, Phone, MapPin } from "lucide-react"
-import { signIn } from "next-auth/react"
+import { Lock, Mail, Loader2, AlertCircle, User, Phone, MapPin, Building } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const Register: React.FC = () => {
+export default function Register() {
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -23,6 +24,7 @@ const Register: React.FC = () => {
     poste: "",
     adresse: "",
     role: "recruteur",
+    nom_societe: "",
   })
   const [image, setImage] = useState<File | null>(null)
   const [cv, setCv] = useState<File | null>(null)
@@ -33,6 +35,9 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
+  const [successDialog, setSuccessDialog] = useState<boolean>(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
 
   const departements = [
     "Ressources Humaines",
@@ -59,11 +64,21 @@ const Register: React.FC = () => {
   }
 
   const handleGoogleLogin = () => {
-    signIn("google")
+    // Implement Google login
+    console.log("Google login clicked")
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+
+    // Réinitialiser les erreurs spécifiques lors de la modification
+    if (name === "email") {
+      setEmailError(null)
+    }
+    if (name === "password") {
+      setPasswordError(null)
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
@@ -89,8 +104,28 @@ const Register: React.FC = () => {
     }
   }
 
+  const validateForm = (): boolean => {
+    let isValid = true
+
+    // Validation du mot de passe (minimum 8 caractères)
+    if (formData.password.length < 8) {
+      setPasswordError("Le mot de passe doit contenir au moins 8 caractères")
+      isValid = false
+    } else {
+      setPasswordError(null)
+    }
+
+    return isValid
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validation du formulaire avant envoi
+    if (!validateForm()) {
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -106,7 +141,6 @@ const Register: React.FC = () => {
     if (cv) formDataToSend.append("cv", cv)
 
     try {
-      // Récupérer le token d'authentification (à adapter selon votre système d'auth)
       const response = await fetch("http://127.0.0.1:8000/api/register", {
         method: "POST",
         body: formDataToSend,
@@ -118,17 +152,25 @@ const Register: React.FC = () => {
         console.log("Registration successful", data)
         // Stocker le nouveau token si nécessaire
         if (data.token) {
-          localStorage.setItem("auth_token", data.token)
+          localStorage.setItem("token", data.token)
         }
-        router.push("/login")
+        setSuccessDialog(true)
       } else {
-        console.error("Registration failed", data.error)
-        setError(
-          typeof data.error === "object"
-            ? Object.values(data.error).flat().join(", ")
-            : data.error || "L'inscription a échoué",
-        )
-        setShowErrorDialog(true)
+  
+
+        // Vérifier si l'erreur concerne un email déjà existant
+        if (data.error && typeof data.error === "string" && data.error.includes("email")) {
+          setEmailError("Cette adresse email est déjà inscrite")
+        } else if (data.error && typeof data.error === "object" && data.error.email) {
+          setEmailError(Array.isArray(data.error.email) ? data.error.email[0] : data.error.email)
+        } else {
+          setError(
+            typeof data.error === "object"
+              ? Object.values(data.error).flat().join(", ")
+              : data.error || "L'inscription a échoué",
+          )
+          setShowErrorDialog(true)
+        }
       }
     } catch (error) {
       console.error("Erreur d'inscription", error)
@@ -141,6 +183,11 @@ const Register: React.FC = () => {
 
   const closeErrorDialog = () => {
     setShowErrorDialog(false)
+  }
+
+  const closeSuccessDialog = () => {
+    setSuccessDialog(false)
+    router.push(`/verify?email=${encodeURIComponent(formData.email)}`)
   }
 
   return (
@@ -236,12 +283,13 @@ const Register: React.FC = () => {
                       name="email"
                       type="email"
                       placeholder="Entrez votre email"
-                      className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                      className={`pl-10 bg-white border ${emailError ? "border-red-500" : "border-gray-300"} focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200`}
                       required
                       value={formData.email}
                       onChange={handleChange}
                     />
                   </div>
+                  {emailError && <p className="text-red-500 text-sm mt-1">Cette adresse e-mail est déjà utilisée.</p>}
                 </div>
 
                 {/* Mot de passe */}
@@ -258,9 +306,32 @@ const Register: React.FC = () => {
                       name="password"
                       type="password"
                       placeholder="Créez votre mot de passe"
-                      className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                      className={`pl-10 bg-white border ${passwordError ? "border-red-500" : "border-gray-300"} focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200`}
                       required
                       value={formData.password}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
+                </div>
+
+                {/* Nom de la société */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700" htmlFor="nom_societe">
+                    Nom de la société
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Building className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Input
+                      id="nom_societe"
+                      name="nom_societe"
+                      type="text"
+                      placeholder="Entrez le nom de votre société"
+                      className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                      required
+                      value={formData.nom_societe}
                       onChange={handleChange}
                     />
                   </div>
@@ -277,8 +348,7 @@ const Register: React.FC = () => {
                       value={formData.departement}
                       onValueChange={(value) => handleSelectChange("departement", value)}
                     >
-                      <SelectTrigger className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200">
-                        
+                      <SelectTrigger className="pl-3 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200">
                         <SelectValue placeholder="Département" />
                       </SelectTrigger>
                       <SelectContent>
@@ -301,7 +371,7 @@ const Register: React.FC = () => {
                       onValueChange={(value) => handleSelectChange("poste", value)}
                       disabled={!formData.departement}
                     >
-                      <SelectTrigger className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200">
+                      <SelectTrigger className="pl-3 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200">
                         <SelectValue placeholder="Poste" />
                       </SelectTrigger>
                       <SelectContent>
@@ -373,6 +443,7 @@ const Register: React.FC = () => {
                     accept="image/*"
                     onChange={handleImageChange}
                     className="w-full text-sm text-gray-500 file:bg-[#e1eff9] file:px-4 file:py-2 file:rounded-md file:border-none file:text-[#39739d] cursor-pointer"
+                    required
                   />
                 </div>
 
@@ -387,6 +458,7 @@ const Register: React.FC = () => {
                     accept=".pdf,.doc,.docx"
                     onChange={handleCvChange}
                     className="w-full text-sm text-gray-500 file:bg-[#e1eff9] file:px-4 file:py-2 file:rounded-md file:border-none file:text-[#39739d] cursor-pointer"
+                    required
                   />
                 </div>
                 <input type="hidden" name="role" value={formData.role} />
@@ -413,9 +485,9 @@ const Register: React.FC = () => {
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-600">
                     Vous avez déja un compte?{" "}
-                    <a href="/login" className="text-[#2c4999] hover:underline">
+                    <Link href="/login" className="text-[#2c4999] hover:underline">
                       Se connecter
-                    </a>
+                    </Link>
                   </p>
                 </div>
               </form>
@@ -440,8 +512,25 @@ const Register: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog} onOpenChange={setSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl text-green-600">Inscription réussie</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-700">
+            Votre compte a été créé avec succès. Un code de vérification a été envoyé à votre adresse email. Veuillez
+            vérifier votre boîte de réception et entrer le code pour activer votre compte.
+          </p>
+          <DialogFooter>
+            <Button onClick={closeSuccessDialog} className="bg-[#2c4999] hover:bg-[#1b375b]">
+              Continuer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
-export default Register

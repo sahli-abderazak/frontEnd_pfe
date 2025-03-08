@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Home, Users, Building2, Calendar, Briefcase, Star, BarChart, Settings, UserCircle, LogOut } from "lucide-react"
+import { Home, Users, Building2, Calendar, Briefcase, Star, BarChart, Settings, UserCircle, LogOut, MessageSquare } from "lucide-react"
 
 const menuItems = [
   { icon: <Home className="h-4 w-4" />, label: "Dashboard", href: "/dashbord" },
@@ -11,7 +11,9 @@ const menuItems = [
   { icon: <Building2 className="h-4 w-4" />, label: "Archive", href: "/archive" },
   //{ icon: <Calendar className="h-4 w-4" />, label: "Calendar", href: "/calendar" },
   { icon: <Briefcase className="h-4 w-4" />, label: "Offre", href: "/offre_admin" },
-  //{ icon: <Star className="h-4 w-4" />, label: "Reviews", href: "/reviews" },
+  { icon: <Star className="h-4 w-4" />, label: "Témoiniages", href: "/temoiniage_admin" },
+  { icon: <MessageSquare className="h-4 w-4" />, label: "Messages", href: "/contact_admin" },
+    //{ icon: <Star className="h-4 w-4" />, label: "Reviews", href: "/reviews" },
   //{ icon: <BarChart className="h-4 w-4" />, label: "Reports", href: "/reports" },
   //{ icon: <Settings className="h-4 w-4" />, label: "Settings", href: "/settings" },
   //{ icon: <UserCircle className="h-4 w-4" />, label: "Profile", href: "/profile" },

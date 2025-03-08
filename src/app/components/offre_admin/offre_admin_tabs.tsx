@@ -3,7 +3,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OffreAdminTable } from "./offre_admin_table"
 import { OffreAdminTableValide } from "./offre-admin-table-valide"
-import { OffreAdminTableExpiree } from "./offre-admin-table-expire"
 
 export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   return (
@@ -21,12 +20,12 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
         >
           Offre Validé
         </TabsTrigger>
-        <TabsTrigger
+        {/* <TabsTrigger
           value="offre_expiree"
           className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary"
         >
           Offre Expiré
-        </TabsTrigger>
+        </TabsTrigger> */}
       </TabsList>
 
       <TabsContent value="offre" className="p-6">
@@ -37,9 +36,7 @@ export function OffreAdminTabs({ refreshTrigger }: { refreshTrigger: boolean }) 
         <OffreAdminTableValide refresh={refreshTrigger} />
       </TabsContent>
 
-      <TabsContent value="offre_expiree" className="p-6">
-        <OffreAdminTableExpiree refresh={refreshTrigger} />
-      </TabsContent>
+
     </Tabs>
   )
 }

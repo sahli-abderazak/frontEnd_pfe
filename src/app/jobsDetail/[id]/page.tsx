@@ -290,7 +290,7 @@ export default function JobDetailPage({
                       <ul className="list-style-three">
                         {responsabilites.map((item, index) => (
                           <li key={index}>
-                            <span className="bullet">•</span>
+                            <span className="bullet"></span>
                             {item}
                           </li>
                         ))}
@@ -304,7 +304,7 @@ export default function JobDetailPage({
                       <ul className="list-style-three">
                         {competences.map((item, index) => (
                           <li key={index}>
-                            <span className="bullet">•</span>
+                            <span className="bullet"></span>
                             {item}
                           </li>
                         ))}

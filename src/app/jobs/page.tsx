@@ -16,9 +16,9 @@ import {
   AlarmClock,
   X,
   Building,
-  Calendar,
   Filter,
   ArrowUpRight,
+  Tv,
 } from "lucide-react"
 import Footer from "../components/index/footer"
 import Header from "../components/index/header"
@@ -75,9 +75,6 @@ export default function JobsPage() {
     ville: "",
     domaine: "",
   })
-
-  
-  
 
   const fetchOffres = useCallback(async () => {
     try {
@@ -479,9 +476,7 @@ export default function JobsPage() {
 
               <div className="form-group button-field">
                 <button type="submit" className="find-jobs-btn">
-                
                   Chercher poste
-                  
                 </button>
               </div>
             </form>
@@ -603,6 +598,17 @@ export default function JobsPage() {
                         />
                         <label htmlFor="check-ba">Tous</label>
                       </li>
+
+                      <li>
+                        <input
+                          id="check-sans"
+                          type="radio"
+                          name="niveauExperience"
+                          checked={selectedExperienceLevel === "sans_experience"}
+                          onChange={() => handleExperienceLevelChange("sans_experience")}
+                        />
+                        <label htmlFor="check-sans">Sans expérience</label>
+                      </li>
                       <li>
                         <input
                           id="check-bb"
@@ -670,6 +676,13 @@ export default function JobsPage() {
                       >
                         <AlarmClock size={18} className="mr-2" />
                         <span>Free mission</span>
+                      </button>
+                      <button
+                        onClick={() => handleTypeTravailChange("Télétravail")}
+                        className={`modern-work-button ${selectedTypeTravail === "Télétravail" ? "active" : ""}`}
+                      >
+                        <Tv size={18} className="mr-2" />
+                        <span>Télétravail</span>
                       </button>
                     </div>
                   </div>
@@ -796,7 +809,6 @@ function JobBlock({ offre }: { offre: Offre }) {
               <li>
                 <GraduationCap className="icon" /> {offre.niveauEtude}
               </li>
-              
             </ul>
             <ul className="job-other-info">
               <li className="time">{offre.typeTravail}</li>

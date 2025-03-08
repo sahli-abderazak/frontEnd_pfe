@@ -1,17 +1,18 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Lock, Mail, Linkedin, Loader2, AlertCircle } from "lucide-react"
-import { signIn } from "next-auth/react"
+import { Lock, Mail, Loader2, AlertCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
-const Login: React.FC = () => {
+export default function Login() {
   const [email, setEmail] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const router = useRouter()
@@ -20,7 +21,8 @@ const Login: React.FC = () => {
   const [showErrorDialog, setShowErrorDialog] = useState<boolean>(false)
 
   const handleGoogleLogin = () => {
-    signIn("google")
+    // Implement Google login
+    console.log("Google login clicked")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,8 +43,14 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         if (data.user && data.user.archived === 1) {
-          setError("Votre compte a été archivé. Veuillez contacter l'administrateur.")
+          setError("Nous rencontrons un problème avec votre compte. Contactez l'administrateur pour en savoir plus.")
           setShowErrorDialog(true)
+          return
+        }
+
+        // If the user is not active, redirect to verification page
+        if (data.user && !data.user.active) {
+          router.push(`/verify?email=${encodeURIComponent(email)}`)
           return
         }
 
@@ -56,6 +64,13 @@ const Login: React.FC = () => {
         }
       } else {
         console.error("Login failed", data.error)
+
+        // Check if the error is about inactive account
+        if (data.error && data.error.includes("Veuillez vérifier votre compte")) {
+          router.push(`/verify?email=${encodeURIComponent(email)}`)
+          return
+        }
+
         setError(data.error || "Identifiants incorrects")
         setShowErrorDialog(true)
       }
@@ -66,12 +81,6 @@ const Login: React.FC = () => {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleLoginWithLinkedIn = () => {
-    // Remplacez par l'URL de votre authentification LinkedIn
-    window.location.href =
-      "https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=VOTRE_CLIENT_ID&redirect_uri=VOTRE_REDIRECT_URI&scope=r_liteprofile%20r_emailaddress"
   }
 
   const closeErrorDialog = () => {
@@ -97,7 +106,7 @@ const Login: React.FC = () => {
           {/* Form Section */}
           <div className="md:w-1/2 p-8 md:p-12 bg-white">
             <div className="max-w-md mx-auto">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">Bienvenue,</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-8">Bienvenue</h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
@@ -119,7 +128,12 @@ const Login: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="password">Mot de passe</Label>
+                    <Link href="/forgot-password" className="text-sm text-[#2c4999] hover:underline">
+                      Mot de passe oublié?
+                    </Link>
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
@@ -162,14 +176,15 @@ const Login: React.FC = () => {
                   <Mail className="h-5 w-5" />
                   <span>Se connecter avec Google</span>
                 </Button>
+              </div>
 
-                <Button
-                  onClick={handleLoginWithLinkedIn}
-                  className="w-full border border-[#0077b5] text-[#0077b5] bg-white hover:bg-[#f3faff] py-3 rounded-lg flex items-center justify-center space-x-2"
-                >
-                  <Linkedin className="h-5 w-5" />
-                  <span>Se connecter avec LinkedIn</span>
-                </Button>
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600">
+                  Vous n'avez pas de compte?{" "}
+                  <Link href="/register" className="text-[#2c4999] hover:underline">
+                    S'inscrire
+                  </Link>
+                </p>
               </div>
             </div>
           </div>
@@ -198,6 +213,4 @@ const Login: React.FC = () => {
     </div>
   )
 }
-
-export default Login
 
