@@ -38,6 +38,8 @@ export default function Register() {
   const [successDialog, setSuccessDialog] = useState<boolean>(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [telError, setTelError] = useState<string | null>(null)
+  const [societeError, setCompanyError] = useState<string | null>(null)
 
   const departements = [
     "Ressources Humaines",
@@ -78,6 +80,12 @@ export default function Register() {
     if (name === "password") {
       setPasswordError(null)
     }
+    if (name === "numTel") {
+      setTelError(null)
+    }
+    if (name === "nom_societe") {
+      setCompanyError(null)
+    }
 
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
@@ -113,6 +121,15 @@ export default function Register() {
       isValid = false
     } else {
       setPasswordError(null)
+    }
+
+    // Validation du numéro de téléphone (exactement 8 chiffres)
+    const phoneRegex = /^\d{8}$/
+    if (!phoneRegex.test(formData.numTel)) {
+      setTelError("Le numéro de téléphone doit comporter exactement 8 chiffres")
+      isValid = false
+    } else {
+      setTelError(null)
     }
 
     return isValid
@@ -156,13 +173,17 @@ export default function Register() {
         }
         setSuccessDialog(true)
       } else {
-  
-
         // Vérifier si l'erreur concerne un email déjà existant
         if (data.error && typeof data.error === "string" && data.error.includes("email")) {
-          setEmailError("Cette adresse email est déjà inscrite")
+          setEmailError("Cette adresse email est déjà utilisée")
         } else if (data.error && typeof data.error === "object" && data.error.email) {
           setEmailError(Array.isArray(data.error.email) ? data.error.email[0] : data.error.email)
+        }
+        // Vérifier si l'erreur concerne une société déjà inscrite
+        else if (data.error && typeof data.error === "string" && data.error.includes("societe")) {
+          setCompanyError("Cette société est déjà inscrite")
+        } else if (data.error && typeof data.error === "object" && data.error.nom_societe) {
+          setCompanyError(Array.isArray(data.error.nom_societe) ? data.error.nom_societe[0] : data.error.nom_societe)
         } else {
           setError(
             typeof data.error === "object"
@@ -329,12 +350,13 @@ export default function Register() {
                       name="nom_societe"
                       type="text"
                       placeholder="Entrez le nom de votre société"
-                      className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                      className={`pl-10 bg-white border ${societeError ? "border-red-500" : "border-gray-300"} focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200`}
                       required
                       value={formData.nom_societe}
                       onChange={handleChange}
                     />
                   </div>
+                  {societeError && <p className="text-red-500 text-sm mt-1">Cette société est déjà inscrite.</p>}
                 </div>
 
                 {/* Département et Poste */}
@@ -401,12 +423,13 @@ export default function Register() {
                         name="numTel"
                         type="tel"
                         placeholder="Entrez votre téléphone"
-                        className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                        className={`pl-10 bg-white border ${telError ? "border-red-500" : "border-gray-300"} focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200`}
                         required
                         value={formData.numTel}
                         onChange={handleChange}
                       />
                     </div>
+                    {telError && <p className="text-red-500 text-sm mt-1">{telError}</p>}
                   </div>
 
                   {/* Adresse */}
