@@ -145,6 +145,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
   const [success, setSuccess] = useState<string | null>(null)
   const [userDepartement, setUserDepartement] = useState<string>("")
   const [activeTab, setActiveTab] = useState("informations")
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({})
 
   // État pour les champs personnalisés
   const [customDomaine, setCustomDomaine] = useState<string>("")
@@ -267,8 +268,91 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
     setter(e.target.value)
   }
 
+  const validateForm = () => {
+    const errors: Record<string, boolean> = {}
+    const requiredFields = [
+      "departement",
+      "poste",
+      "description",
+      "dateExpiration",
+      "typePoste",
+      "typeTravail",
+      "heureTravail",
+      "niveauExperience",
+      "niveauEtude",
+      "ville",
+      "responsabilite",
+      "experience",
+    ]
+
+    // Check if domaine is required based on conditions
+    if (formData.departement) {
+      requiredFields.push("domaine")
+    }
+
+    // Check each required field
+    requiredFields.forEach((field) => {
+      let value = formData[field as keyof typeof formData]
+
+      // Special handling for custom fields
+      if (field === "domaine" && formData.domaine === AUTRE_OPTION) {
+        value = customDomaine
+      }
+      if (field === "poste" && formData.poste === AUTRE_OPTION) {
+        value = customPoste
+      }
+
+      if (!value || value.trim() === "") {
+        errors[field] = true
+      }
+    })
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate the form first
+    if (!validateForm()) {
+      // Find the first tab with errors and switch to it
+      const fieldsToTabMap: Record<string, string> = {
+        departement: "informations",
+        domaine: "informations",
+        poste: "informations",
+        description: "informations",
+        typePoste: "details",
+        typeTravail: "details",
+        heureTravail: "details",
+        niveauExperience: "details",
+        niveauEtude: "details",
+        responsabilite: "details",
+        experience: "details",
+        ville: "localisation",
+        dateExpiration: "dates",
+      }
+
+      // Find the first field with an error
+      const firstErrorField = Object.keys(validationErrors)[0]
+      const tabWithError = fieldsToTabMap[firstErrorField] || "informations"
+
+      // Switch to the tab with the error
+      setActiveTab(tabWithError)
+
+      // Scroll to the field with error (if possible)
+      setTimeout(() => {
+        const errorElement = document.getElementById(firstErrorField)
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: "smooth", block: "center" })
+          errorElement.focus()
+        }
+      }, 100)
+
+      setError("Veuillez remplir tous les champs obligatoires.")
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(null)
@@ -346,6 +430,14 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
   }
 
   const today = new Date().toISOString().split("T")[0]
+
+  const hasError = (fieldName: string) => {
+    return validationErrors[fieldName] ? true : false
+  }
+
+  const getInputClassName = (fieldName: string, baseClass: string) => {
+    return `${baseClass} ${hasError(fieldName) ? "border-red-500 ring-1 ring-red-500" : ""}`
+  }
 
   // Styles personnalisés
   const styles = {
@@ -456,7 +548,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       id="departement"
                       value={formData.departement}
                       onChange={(e) => handleSelectChange("departement", e.target.value)}
-                      className={styles.select}
+                      className={getInputClassName("departement", styles.select)}
                     >
                       <option value="">Sélectionner un département</option>
                       {DEPARTMENTS.map((dept) => (
@@ -465,6 +557,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         </option>
                       ))}
                     </select>
+                    {hasError("departement") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
 
                   {/* Domaine */}
@@ -477,7 +570,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       value={formData.domaine}
                       onChange={(e) => handleSelectChange("domaine", e.target.value)}
                       disabled={!formData.departement}
-                      className={styles.select}
+                      className={getInputClassName("domaine", styles.select)}
                     >
                       <option value="">Sélectionner un domaine</option>
                       {availableDomains.map((domain) => (
@@ -487,6 +580,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       ))}
                       <option value={AUTRE_OPTION}>Autre</option>
                     </select>
+                    {hasError("domaine") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
 
                   {/* Champ personnalisé pour le domaine */}
@@ -500,9 +594,10 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         value={customDomaine}
                         onChange={(e) => handleCustomInputChange(e, setCustomDomaine)}
                         placeholder="Entrez votre domaine personnalisé"
-                        className={styles.input}
+                        className={getInputClassName("domaine", styles.input)}
                         required
                       />
+                      {hasError("domaine") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                     </div>
                   )}
 
@@ -516,7 +611,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       value={formData.poste}
                       onChange={(e) => handleSelectChange("poste", e.target.value)}
                       disabled={!formData.departement}
-                      className={styles.select}
+                      className={getInputClassName("poste", styles.select)}
                     >
                       <option value="">Sélectionner un poste</option>
                       {availablePositions.map((position) => (
@@ -526,6 +621,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       ))}
                       <option value={AUTRE_OPTION}>Autre</option>
                     </select>
+                    {hasError("poste") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
 
                   {/* Champ personnalisé pour le poste */}
@@ -539,9 +635,10 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         value={customPoste}
                         onChange={(e) => handleCustomInputChange(e, setCustomPoste)}
                         placeholder="Entrez votre poste personnalisé"
-                        className={styles.input}
+                        className={getInputClassName("poste", styles.input)}
                         required
                       />
+                      {hasError("poste") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                     </div>
                   )}
 
@@ -570,10 +667,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    className={styles.textarea}
+                    className={getInputClassName("description", styles.textarea)}
                     placeholder="Décrivez le poste en détail..."
                     required
                   />
+                  {hasError("description") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                 </div>
               </div>
             )}
@@ -596,7 +694,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       id="typePoste"
                       value={formData.typePoste}
                       onChange={(e) => handleSelectChange("typePoste", e.target.value)}
-                      className={styles.select}
+                      className={getInputClassName("typePoste", styles.select)}
                     >
                       <option value="">Sélectionner un type de contrat</option>
                       {JOB_TYPES.map((type) => (
@@ -605,6 +703,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         </option>
                       ))}
                     </select>
+                    {hasError("typePoste") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
 
                   {/* Type de travail */}
@@ -616,7 +715,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       id="typeTravail"
                       value={formData.typeTravail}
                       onChange={(e) => handleSelectChange("typeTravail", e.target.value)}
-                      className={styles.select}
+                      className={getInputClassName("typeTravail", styles.select)}
                     >
                       <option value="">Sélectionner un type de travail</option>
                       {WORK_TYPES.map((type) => (
@@ -625,6 +724,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         </option>
                       ))}
                     </select>
+                    {hasError("typeTravail") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
 
                   {/* Heures de travail */}
@@ -639,11 +739,12 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         value={formData.heureTravail}
                         onChange={handleInputChange}
                         placeholder="Ex: 40h par semaine"
-                        className={`${styles.input} pl-10`}
+                        className={`${getInputClassName("heureTravail", styles.input)} pl-10`}
                         required
                       />
                       <Clock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     </div>
+                    {hasError("heureTravail") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
 
                   {/* Niveau d'expérience */}
@@ -655,7 +756,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       id="niveauExperience"
                       value={formData.niveauExperience}
                       onChange={(e) => handleSelectChange("niveauExperience", e.target.value)}
-                      className={styles.select}
+                      className={getInputClassName("niveauExperience", styles.select)}
                     >
                       <option value="">Sélectionner un niveau d'expérience</option>
                       {EXPERIENCE_LEVELS.map((level) => (
@@ -664,6 +765,9 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         </option>
                       ))}
                     </select>
+                    {hasError("niveauExperience") && (
+                      <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>
+                    )}
                   </div>
 
                   {/* Niveau d'étude */}
@@ -675,7 +779,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       id="niveauEtude"
                       value={formData.niveauEtude}
                       onChange={(e) => handleSelectChange("niveauEtude", e.target.value)}
-                      className={styles.select}
+                      className={getInputClassName("niveauEtude", styles.select)}
                     >
                       <option value="">Sélectionner un niveau d'étude</option>
                       {EDUCATION_LEVELS.map((level) => (
@@ -684,6 +788,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         </option>
                       ))}
                     </select>
+                    {hasError("niveauEtude") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
                 </div>
 
@@ -697,10 +802,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                     name="responsabilite"
                     value={formData.responsabilite}
                     onChange={handleInputChange}
-                    className={styles.textarea}
+                    className={getInputClassName("responsabilite", styles.textarea)}
                     placeholder="Décrivez les responsabilités liées au poste..."
                     required
                   />
+                  {hasError("responsabilite") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                 </div>
 
                 {/* Expérience */}
@@ -713,10 +819,11 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                     name="experience"
                     value={formData.experience}
                     onChange={handleInputChange}
-                    className={styles.textarea}
+                    className={getInputClassName("experience", styles.textarea)}
                     placeholder="Décrivez l'expérience requise pour ce poste..."
                     required
                   />
+                  {hasError("experience") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                 </div>
               </div>
             )}
@@ -758,7 +865,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                       id="ville"
                       value={formData.ville}
                       onChange={(e) => handleSelectChange("ville", e.target.value)}
-                      className={styles.select}
+                      className={getInputClassName("ville", styles.select)}
                     >
                       <option value="">Sélectionner une ville</option>
                       {CITIES.map((city) => (
@@ -767,6 +874,7 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         </option>
                       ))}
                     </select>
+                    {hasError("ville") && <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>}
                   </div>
                 </div>
               </div>
@@ -814,11 +922,14 @@ export function AddOffreForm({ onOffreAdded }: { onOffreAdded: () => void }) {
                         min={today}
                         value={formData.dateExpiration}
                         onChange={handleInputChange}
-                        className={`${styles.input} pl-10 border-blue-300`}
+                        className={`${getInputClassName("dateExpiration", styles.input)} pl-10 border-blue-300`}
                         required
                       />
                       <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                     </div>
+                    {hasError("dateExpiration") && (
+                      <p className="text-xs text-red-500 mt-1">Ce champ est obligatoire</p>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">La date doit être postérieure à aujourd'hui</p>
                   </div>
                 </div>

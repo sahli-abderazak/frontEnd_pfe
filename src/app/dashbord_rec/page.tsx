@@ -8,8 +8,8 @@ import { RecentActivities } from "../components/recent-activities"
 import { UpcomingLeaves } from "../components/upcoming-leaves"
 import { WelcomeBanner } from "../components/recruteur/welcome-banner_rec"
 import { QuickActions } from "../components/quick-actions"
-import { DashboardHeaderRec } from "../components/recruteur/dashboard-header_rec"
 import { DashboardSidebarRec } from "../components/recruteur/dashboard-sidebar_rec"
+import { DashboardHeaderRec } from "../components/recruteur/dashboard-header_rec"
 
 export default function DashboardPage() {
   return (
@@ -17,7 +17,7 @@ export default function DashboardPage() {
       <DashboardHeaderRec />
       <div className="container mx-auto p-4 md:p-6 lg:p-8 pt-6">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
-          {/* Sidebar */}
+          {/* Sidebar - visible on desktop, hidden on mobile (handled by MobileSidebarRec) */}
           <div className="hidden md:block md:col-span-1 lg:col-span-1">
             <div className="sticky top-20">
               <DashboardSidebarRec />
@@ -69,4 +69,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

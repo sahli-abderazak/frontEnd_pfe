@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Bell } from "lucide-react"
+import { Search, Bell, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { MobileSidebarRec } from "./mobile-sidebar-rec"
 
 interface Notification {
   id: number
@@ -86,13 +87,13 @@ export function DashboardHeaderRec() {
         // Handle navigation based on notification type
         if (notification.type === "offer_validated") {
           // Navigate to the validated job offer details
-          window.location.href = `/offre`
+          window.location.href = "/offre"
         } else if (notification.type === "new_application") {
           // Navigate to the application details
-          window.location.href = `/candidat`
+          window.location.href = "/candidat"
         } else if (notification.type === "account_activated") {
           // Navigate to the dashboard
-          window.location.href = `/dashbord_rec`
+          window.location.href = "/dashbord_rec"
         }
       })
       .catch((error) => console.error("Erreur lors du marquage de la notification comme lue :", error))
@@ -213,19 +214,35 @@ export function DashboardHeaderRec() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {/* Mobile sidebar trigger */}
+          <MobileSidebarRec />
+
           <a href="/dashbord_rec" className="flex items-center space-x-2">
-            <img src="/Logo.jpeg" alt="Logo" className="h-14 w-auto" />
-            <span className="font-bold">Recruter Dashboard</span>
+            <img src="/Logo.jpeg" alt="Logo" className="h-10 w-auto" />
+            <span className="font-bold hidden sm:inline">Recruter Dashboard</span>
           </a>
-          <div className="hidden md:flex md:w-full md:max-w-sm items-center space-x-2">
-            <Input type="search" placeholder="Rechercher..." className="h-9 md:w-[300px] lg:w-[300px]" />
-            <Button size="icon" variant="ghost">
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        {/* Search - hidden on mobile, shown on md and up */}
+        <div className="hidden md:flex md:w-full md:max-w-sm items-center space-x-2 mx-4">
+          <Input type="search" placeholder="Rechercher..." className="h-9 md:w-[300px] lg:w-[300px]" />
+          <Button size="icon" variant="ghost">
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Mobile search trigger */}
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Message Icon */}
+          <Button variant="ghost" size="icon" className="relative" onClick={() => (window.location.href = "/chatRec")}>
+            <MessageSquare className="h-5 w-5" />
+          </Button>
+
           {/* Notifications Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -314,11 +331,11 @@ export function DashboardHeaderRec() {
           {/* User Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-14 w-14 rounded-full p-0">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                 <img
-                  src={user?.image || "/placeholder.svg?height=56&width=56"}
+                  src={user?.image || "/placeholder.svg?height=40&width=40"}
                   alt="Avatar"
-                  className="rounded-full object-cover h-14 w-14"
+                  className="rounded-full object-cover h-10 w-10"
                 />
               </Button>
             </DropdownMenuTrigger>

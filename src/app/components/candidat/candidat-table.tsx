@@ -3,7 +3,20 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Download, Archive, Mail, Phone, MapPin, Briefcase, Calendar, GraduationCap, Clock } from "lucide-react"
+import {
+  Eye,
+  Download,
+  Archive,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Calendar,
+  GraduationCap,
+  Clock,
+  X,
+  ChevronLeft,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -14,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useMediaQuery } from "@/app/hooks/use-media-query"
 
 interface Offre {
   id: number
@@ -49,6 +63,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [candidatToArchive, setCandidatToArchive] = useState<number | null>(null)
+  const isMobile = useMediaQuery("(max-width: 640px)")
 
   useEffect(() => {
     const fetchCandidats = async () => {
@@ -176,66 +191,66 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {candidats.map((candidat) => (
           <Card
             key={candidat.id}
             className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full"
           >
-            <CardHeader className="pb-2">
-              <div className="flex items-center space-x-4">
-                <Avatar className={`h-12 w-12 ${getColorClass(candidat.nom)}`}>
+            <CardHeader className="pb-2 px-4 sm:px-6">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
                   <AvatarFallback className="text-white font-medium">
                     {getInitials(candidat.nom, candidat.prenom)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
-                  <h3 className="font-semibold text-lg leading-none tracking-tight">
+                  <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
                     {candidat.prenom} {candidat.nom}
                   </h3>
-                  <div className="flex items-center text-sm text-muted-foreground">
+                  <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                     <Briefcase className="mr-1 h-3 w-3" />
-                    {candidat.offre?.poste}
+                    <span className="truncate max-w-[180px] sm:max-w-none">{candidat.offre?.poste}</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pb-2 flex-grow">
-              <div className="grid gap-2 text-sm">
+            <CardContent className="pb-2 px-4 sm:px-6 flex-grow">
+              <div className="grid gap-2 text-xs sm:text-sm">
                 <div className="flex items-center">
-                  <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <Mail className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                   <a href={`mailto:${candidat.email}`} className="text-blue-600 hover:underline truncate">
                     {candidat.email}
                   </a>
                 </div>
                 <div className="flex items-center">
-                  <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{candidat.tel}</span>
+                  <Phone className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{candidat.tel}</span>
                 </div>
                 <div className="flex items-center">
-                  <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>
+                  <MapPin className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">
                     {candidat.ville}, {candidat.pays}
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <GraduationCap className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{candidat.niveauEtude}</span>
+                  <GraduationCap className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{candidat.niveauEtude}</span>
                 </div>
                 <div className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{candidat.niveauExperience}</span>
+                  <Clock className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{candidat.niveauExperience}</span>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-blue-50">
+              <div className="mt-3 flex flex-wrap gap-1 sm:gap-2">
+                <Badge variant="outline" className="bg-blue-50 text-xs">
                   {candidat.offre?.departement}
                 </Badge>
-                <Badge variant="outline" className="bg-emerald-50">
+                <Badge variant="outline" className="bg-emerald-50 text-xs">
                   {candidat.offre?.domaine}
                 </Badge>
-                <Badge variant="outline" className="bg-amber-50">
-                  <Calendar className="mr-1 h-3 w-3" />
+                <Badge variant="outline" className="bg-amber-50 text-xs">
+                  <Calendar className="mr-1 h-2 w-2 sm:h-3 sm:w-3" />
                   {new Date(candidat.created_at).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",
@@ -244,23 +259,59 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
                 </Badge>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between pt-2 mt-auto">
-              <Button variant="outline" size="sm" onClick={() => handleViewDetails(candidat)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Détails
-              </Button>
-              <div className="flex gap-2">
-                {candidat.cv && (
-                  <Button variant="outline" size="sm" onClick={() => handleDownloadCV(candidat.cv)}>
-                    <Download className="mr-2 h-4 w-4" />
-                    CV
+            <CardFooter className="flex justify-between pt-2 px-4 sm:px-6 mt-auto">
+              {isMobile ? (
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-8 px-2"
+                    onClick={() => handleViewDetails(candidat)}
+                  >
+                    <Eye className="h-3 w-3 sm:mr-2" />
+                    <span className="hidden sm:inline">Détails</span>
                   </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={() => openArchiveDialog(candidat.id)}>
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archiver
-                </Button>
-              </div>
+                  {candidat.cv && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-8 px-2"
+                      onClick={() => handleDownloadCV(candidat.cv)}
+                    >
+                      <Download className="h-3 w-3 sm:mr-2" />
+                      <span className="hidden sm:inline">CV</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-8 px-2"
+                    onClick={() => openArchiveDialog(candidat.id)}
+                  >
+                    <Archive className="h-3 w-3 sm:mr-2" />
+                    <span className="hidden sm:inline">Archiver</span>
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => handleViewDetails(candidat)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Détails
+                  </Button>
+                  <div className="flex gap-2">
+                    {candidat.cv && (
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadCV(candidat.cv)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        CV
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => openArchiveDialog(candidat.id)}>
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archiver
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardFooter>
           </Card>
         ))}
@@ -272,140 +323,186 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
         </div>
       )}
 
+      {/* Mobile-friendly Details Modal */}
       {selectedCandidat && isDetailsOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center space-x-4 mb-6">
-              <Avatar className={`h-16 w-16 ${getColorClass(selectedCandidat.nom)}`}>
-                <AvatarFallback className="text-white text-xl font-medium">
-                  {getInitials(selectedCandidat.nom, selectedCandidat.prenom)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="text-2xl font-bold">
-                  {selectedCandidat.prenom} {selectedCandidat.nom}
-                </h2>
-                <p className="text-muted-foreground flex items-center">
-                  <Briefcase className="mr-1 h-4 w-4" />
-                  {selectedCandidat.offre?.poste} • {selectedCandidat.offre?.departement}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informations personnelles</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Email</p>
-                      <a href={`mailto:${selectedCandidat.email}`} className="text-blue-600 hover:underline">
-                        {selectedCandidat.email}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Téléphone</p>
-                      <p>{selectedCandidat.tel}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <MapPin className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Adresse</p>
-                      <p>
-                        {selectedCandidat.ville}, {selectedCandidat.codePostal}
-                      </p>
-                      <p>{selectedCandidat.pays}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informations professionnelles</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <GraduationCap className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Niveau d'étude</p>
-                      <p>{selectedCandidat.niveauEtude}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Clock className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Expérience</p>
-                      <p>{selectedCandidat.niveauExperience}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Calendar className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Dates</p>
-                      <p>Candidature: {new Date(selectedCandidat.created_at).toLocaleDateString("fr-FR")}</p>
-                      <p>
-                        Publication: {new Date(selectedCandidat.offre?.datePublication).toLocaleDateString("fr-FR")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Détails de l'offre</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Poste</p>
-                  <p>{selectedCandidat.offre?.poste}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Département</p>
-                  <p>{selectedCandidat.offre?.departement}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Domaine</p>
-                  <p>{selectedCandidat.offre?.domaine}</p>
-                </div>
-              </div>
-            </div>
-
-            {selectedCandidat.cv && (
-              <div className="mt-6">
-                <Button onClick={() => handleDownloadCV(selectedCandidat.cv)} className="w-full">
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger le CV
+        <div
+          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isMobile ? "p-0" : "p-4"}`}
+        >
+          <div
+            className={`bg-white rounded-lg shadow-lg overflow-y-auto ${isMobile ? "w-full h-full" : "max-w-2xl w-full max-h-[80vh]"}`}
+          >
+            {/* Mobile Header */}
+            {isMobile && (
+              <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between">
+                <Button variant="ghost" size="sm" onClick={() => setIsDetailsOpen(false)}>
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <h2 className="text-lg font-semibold">Détails du candidat</h2>
+                <Button variant="ghost" size="sm" onClick={() => setIsDetailsOpen(false)}>
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             )}
 
-            <div className="flex justify-end mt-6">
-              <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
-                Fermer
-              </Button>
+            <div className={`${isMobile ? "p-4" : "p-6"}`}>
+              {!isMobile && (
+                <div className="flex justify-end mb-2">
+                  <Button variant="ghost" size="sm" onClick={() => setIsDetailsOpen(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
+
+              <div className="flex items-center space-x-4 mb-6">
+                <Avatar className={`${isMobile ? "h-12 w-12" : "h-16 w-16"} ${getColorClass(selectedCandidat.nom)}`}>
+                  <AvatarFallback className="text-white text-xl font-medium">
+                    {getInitials(selectedCandidat.nom, selectedCandidat.prenom)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className={`${isMobile ? "text-xl" : "text-2xl"} font-bold`}>
+                    {selectedCandidat.prenom} {selectedCandidat.nom}
+                  </h2>
+                  <p className="text-muted-foreground flex items-center text-sm">
+                    <Briefcase className="mr-1 h-4 w-4" />
+                    <span className="truncate">
+                      {selectedCandidat.offre?.poste} • {selectedCandidat.offre?.departement}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className={`grid grid-cols-1 ${isMobile ? "gap-4" : "md:grid-cols-2 gap-6"} mb-6`}>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Informations personnelles</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Email</p>
+                        <a
+                          href={`mailto:${selectedCandidat.email}`}
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {selectedCandidat.email}
+                        </a>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Téléphone</p>
+                        <p>{selectedCandidat.tel}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <MapPin className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Adresse</p>
+                        <p>
+                          {selectedCandidat.ville}, {selectedCandidat.codePostal}
+                        </p>
+                        <p>{selectedCandidat.pays}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Informations professionnelles</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <GraduationCap className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Niveau d'étude</p>
+                        <p>{selectedCandidat.niveauEtude}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Clock className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Expérience</p>
+                        <p>{selectedCandidat.niveauExperience}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Calendar className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Dates</p>
+                        <p>Candidature: {new Date(selectedCandidat.created_at).toLocaleDateString("fr-FR")}</p>
+                        <p>
+                          Publication: {new Date(selectedCandidat.offre?.datePublication).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Détails de l'offre</h3>
+                <div className={`grid ${isMobile ? "grid-cols-1 gap-3" : "grid-cols-2 gap-4"}`}>
+                  <div>
+                    <p className="font-medium">Poste</p>
+                    <p>{selectedCandidat.offre?.poste}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Département</p>
+                    <p>{selectedCandidat.offre?.departement}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Domaine</p>
+                    <p>{selectedCandidat.offre?.domaine}</p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedCandidat.cv && (
+                <div className="mt-6">
+                  <Button onClick={() => handleDownloadCV(selectedCandidat.cv)} className="w-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    Télécharger le CV
+                  </Button>
+                </div>
+              )}
+
+              {!isMobile && (
+                <div className="flex justify-end mt-6">
+                  <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+                    Fermer
+                  </Button>
+                </div>
+              )}
             </div>
+
+            {/* Mobile Footer */}
+            {isMobile && (
+              <div className="sticky bottom-0 border-t bg-white p-4">
+                <Button variant="default" onClick={() => setIsDetailsOpen(false)} className="w-full">
+                  Fermer
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Archive Confirmation Dialog */}
       <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
             <DialogTitle>Archiver le candidat</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir archiver ce candidat ?
-            </DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir archiver ce candidat ?</DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex space-x-2 justify-end">
-            <Button variant="outline" onClick={() => setIsArchiveDialogOpen(false)}>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2" : "flex space-x-2 justify-end"}`}>
+            <Button
+              variant="outline"
+              onClick={() => setIsArchiveDialogOpen(false)}
+              className={isMobile ? "w-full" : ""}
+            >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={archiveCandidat}>
+            <Button variant="destructive" onClick={archiveCandidat} className={isMobile ? "w-full" : ""}>
               Archiver
             </Button>
           </DialogFooter>

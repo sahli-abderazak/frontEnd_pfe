@@ -1,13 +1,14 @@
 "use client"
 
 import type React from "react"
-
+import { MessageSquare } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Search, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { MobileSidebar } from "./mobile-sidebar"
 
 interface Notification {
   id: number
@@ -274,19 +275,35 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {/* Mobile sidebar trigger */}
+          <MobileSidebar />
+
           <a href="/dashbord_rec" className="flex items-center space-x-2">
-            <img src="/Logo.jpeg" alt="Logo" className="h-14 w-auto" />
-            <span className="font-bold">Admin Dashboard</span>
+            <img src="/Logo.jpeg" alt="Logo" className="h-10 w-auto" />
+            <span className="font-bold hidden sm:inline">Admin Dashboard</span>
           </a>
-          <div className="hidden md:flex md:w-full md:max-w-sm items-center space-x-2">
-            <Input type="search" placeholder="Rechercher..." className="h-9 md:w-[300px] lg:w-[300px]" />
-            <Button size="icon" variant="ghost">
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        {/* Search - hidden on mobile, shown on md and up */}
+        <div className="hidden md:flex md:w-full md:max-w-sm items-center space-x-2 mx-4">
+          <Input type="search" placeholder="Rechercher..." className="h-9 md:w-[300px] lg:w-[300px]" />
+          <Button size="icon" variant="ghost">
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Mobile search trigger */}
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Message Icon */}
+          <Button variant="ghost" size="icon" className="relative" onClick={() => (window.location.href = "/chatAdmin")}>
+            <MessageSquare className="h-5 w-5" />
+          </Button>
+
           {/* Notifications Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -375,11 +392,11 @@ export function DashboardHeader() {
           {/* User Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-14 w-14 rounded-full p-0">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                 <img
-                  src={user?.image || "/placeholder.svg?height=56&width=56"}
+                  src={user?.image || "/placeholder.svg?height=40&width=40"}
                   alt="Avatar"
-                  className="rounded-full object-cover h-14 w-14"
+                  className="rounded-full object-cover h-10 w-10"
                 />
               </Button>
             </DropdownMenuTrigger>

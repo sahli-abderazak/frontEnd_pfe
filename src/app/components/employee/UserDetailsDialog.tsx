@@ -29,6 +29,12 @@ interface UserDetailsDialogProps {
 export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogProps) {
   if (!user) return null
 
+  // Function to handle email click
+  const handleEmailClick = (email: string) => {
+    // Open Gmail compose with the email as recipient
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`, "_blank")
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="user-details-dialog">
@@ -72,7 +78,12 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
                 <div className="info-icon">📧</div>
                 <div className="info-content">
                   <Label className="info-label">Email</Label>
-                  <div className="info-value">{user.email}</div>
+                  <div
+                    className="info-value cursor-pointer hover:text-primary hover:underline"
+                    onClick={() => handleEmailClick(user.email)}
+                  >
+                    {user.email}
+                  </div>
                 </div>
               </div>
 

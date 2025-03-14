@@ -19,6 +19,7 @@ import {
   Filter,
   ArrowUpRight,
   Tv,
+  ChevronDown,
 } from "lucide-react"
 import Footer from "../components/index/footer"
 import Header from "../components/index/header"
@@ -66,6 +67,7 @@ export default function JobsPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [allPostes, setAllPostes] = useState<string[]>([])
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const filtersRef = useRef<HTMLDivElement>(null)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(6)
@@ -75,6 +77,21 @@ export default function JobsPage() {
     ville: "",
     domaine: "",
   })
+
+  // Collapse sections on mobile
+  const [collapsedSections, setCollapsedSections] = useState({
+    typePoste: false,
+    datePublication: false,
+    experience: false,
+    typeTravail: false,
+  })
+
+  const toggleSection = (section: keyof typeof collapsedSections) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
+  }
 
   const fetchOffres = useCallback(async () => {
     try {
@@ -165,13 +182,32 @@ export default function JobsPage() {
       if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
         setShowSuggestions(false)
       }
+
+      // Close filters when clicking outside on mobile
+      if (
+        showFilters &&
+        filtersRef.current &&
+        !filtersRef.current.contains(event.target as Node) &&
+        !(event.target as Element).closest(".filter-toggle-btn")
+      ) {
+        setShowFilters(false)
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside)
+
+    // Prevent body scrolling when filters are open on mobile
+    if (showFilters) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "auto"
+    }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
+      document.body.style.overflow = "auto"
     }
-  }, [fetchOffres, fetchVillesEtDomaines])
+  }, [fetchOffres, fetchVillesEtDomaines, showFilters])
 
   const handleSearch = (e: React.FormEvent) => {
     setCurrentPage(1) // Réinitialiser à la première page lors d'une nouvelle recherche
@@ -192,145 +228,263 @@ export default function JobsPage() {
 
     // Fermer les suggestions après la recherche
     setShowSuggestions(false)
+
+    // Close filters on mobile after search
+    if (window.innerWidth < 768) {
+      setShowFilters(false)
+    }
   }
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentPage(1) // Réinitialiser à la première page lors d'une nouvelle recherche
-    const { name, checked } = e.target
+  // Modifier la fonction toggleFilters pour qu'elle n'applique pas immédiatement les filtres
+  const toggleFilters = () => {
+    setShowFilters(!showFilters)
+  }
 
-    // Update the checkbox state
-    setTypesPoste((prev) => ({ ...prev, [name]: checked }))
+  // Modifier la fonction closeFilters pour qu'elle applique les filtres avant de fermer le panneau
+  const closeFilters = () => {
+    // Appliquer les filtres avant de fermer
+    applyFilters()
+    setShowFilters(false)
+  }
 
-    // Get all selected job types after this change
-    const updatedTypesPoste = { ...typesPoste, [name]: checked }
-    const selectedTypes = Object.entries(updatedTypesPoste)
+  // Ajouter cette nouvelle fonction pour appliquer tous les filtres ensemble
+  const applyFilters = () => {
+    // Récupérer les types de poste sélectionnés
+    const selectedTypes = Object.entries(typesPoste)
       .filter(([_, isChecked]) => isChecked)
       .map(([type]) => type.toUpperCase())
     const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
 
-    // Search with all parameters
-    searchOffres({
-      ...searchParams,
-      typePoste: typePosteParam,
-      typeTravail: selectedTypeTravail || undefined,
+    // Créer le FormData avec tous les filtres
+    const formData = new FormData()
+
+    // Ajouter les filtres de base
+    if (searchParams.poste) formData.append("poste", searchParams.poste)
+    if (searchParams.ville) formData.append("ville", searchParams.ville)
+    if (searchParams.domaine) formData.append("domaine", searchParams.domaine)
+
+    // Ajouter les types de poste (CDI, CDD, etc.)
+    if (typePosteParam) {
+      formData.append("typePoste", typePosteParam)
+    }
+
+    // Ajouter le type de travail (Temps plein, partiel, etc.)
+    if (selectedTypeTravail) {
+      formData.append("typeTravail", selectedTypeTravail)
+    }
+
+    // Ajouter la date de publication si elle n'est pas "tous"
+    if (selectedDatePublication !== "tous") {
+      formData.append("datePublication", selectedDatePublication)
+    }
+
+    // Traitement spécial pour le niveau d'expérience
+    if (selectedExperienceLevel === "plus_de_3ans") {
+      formData.append("niveauExperience_min", "4ans")
+    } else if (selectedExperienceLevel !== "tous") {
+      formData.append("niveauExperience", selectedExperienceLevel)
+    }
+
+    // S'assurer que tous les paramètres sont correctement envoyés
+    const params = new URLSearchParams()
+    formData.forEach((value, key) => {
+      params.append(key, value.toString())
     })
+
+    // Appel à l'API avec les paramètres combinés
+    setLoading(true)
+    setCurrentPage(1)
+
+    fetch("http://127.0.0.1:8000/api/offresRecherche", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Erreur lors de la recherche")
+        }
+        return response.json()
+      })
+      .then((data) => {
+        // Filtrer les résultats côté client pour s'assurer que les filtres sont bien combinés
+        const filteredData = data.filter((offre: Offre) => {
+          let matchesTypePoste = true
+          let matchesTypeTravail = true
+
+          // Vérifier le type de poste
+          if (typePosteParam) {
+            const selectedTypesArray = typePosteParam.split(",")
+            matchesTypePoste = selectedTypesArray.includes(offre.typePoste)
+          }
+
+          // Vérifier le type de travail
+          if (selectedTypeTravail) {
+            matchesTypeTravail = offre.typeTravail === selectedTypeTravail
+          }
+
+          // Retourner true seulement si l'offre correspond à TOUS les critères
+          return matchesTypePoste && matchesTypeTravail
+        })
+
+        setOffres(filteredData)
+        setLoading(false)
+        setShowFilters(false) // Fermer le panneau des filtres après l'application
+      })
+      .catch((error) => {
+        console.error("Erreur lors de la recherche:", error)
+        setLoading(false)
+      })
+  }
+
+  // Modifier les fonctions de changement de filtre pour qu'elles ne déclenchent pas de recherche immédiate sur mobile
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target
+
+    // Mettre à jour l'état du checkbox
+    setTypesPoste((prev) => ({ ...prev, [name]: checked }))
+
+    // Sur desktop, appliquer les filtres immédiatement
+    if (window.innerWidth >= 768) {
+      // Get all selected job types after this change
+      const updatedTypesPoste = { ...typesPoste, [name]: checked }
+      const selectedTypes = Object.entries(updatedTypesPoste)
+        .filter(([_, isChecked]) => isChecked)
+        .map(([type]) => type.toUpperCase())
+      const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
+
+      // Search with all parameters
+      searchOffres({
+        ...searchParams,
+        typePoste: typePosteParam,
+        typeTravail: selectedTypeTravail || undefined,
+      })
+    }
   }
 
   const handleTypeTravailChange = (typeTravail: string) => {
-    setCurrentPage(1) // Réinitialiser à la première page lors d'une nouvelle recherche
     // Si on clique sur le type déjà sélectionné, on le désélectionne
     const newTypeTravail = selectedTypeTravail === typeTravail ? null : typeTravail
     setSelectedTypeTravail(newTypeTravail)
 
-    // Récupérer les types de poste sélectionnés
-    const selectedTypes = Object.entries(typesPoste)
-      .filter(([_, isChecked]) => isChecked)
-      .map(([type]) => type.toUpperCase())
-    const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
+    // Sur desktop, appliquer les filtres immédiatement
+    if (window.innerWidth >= 768) {
+      // Récupérer les types de poste sélectionnés
+      const selectedTypes = Object.entries(typesPoste)
+        .filter(([_, isChecked]) => isChecked)
+        .map(([type]) => type.toUpperCase())
+      const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
 
-    // Rechercher avec tous les paramètres, y compris typeTravail
-    searchOffres({
-      ...searchParams,
-      typePoste: typePosteParam,
-      typeTravail: newTypeTravail || undefined,
-    })
+      // Rechercher avec tous les paramètres, y compris typeTravail
+      searchOffres({
+        ...searchParams,
+        typePoste: typePosteParam,
+        typeTravail: newTypeTravail || undefined,
+      })
+    }
   }
 
   const handleDatePublicationChange = (dateValue: string) => {
-    setCurrentPage(1) // Réinitialiser à la première page lors d'une nouvelle recherche
     setSelectedDatePublication(dateValue)
 
-    // Récupérer les types de poste sélectionnés
-    const selectedTypes = Object.entries(typesPoste)
-      .filter(([_, isChecked]) => isChecked)
-      .map(([type]) => type.toUpperCase())
-    const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
+    // Sur desktop, appliquer les filtres immédiatement
+    if (window.innerWidth >= 768) {
+      // Récupérer les types de poste sélectionnés
+      const selectedTypes = Object.entries(typesPoste)
+        .filter(([_, isChecked]) => isChecked)
+        .map(([type]) => type.toUpperCase())
+      const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
 
-    // Rechercher avec tous les paramètres
-    const formData = new FormData()
-    if (searchParams.poste) formData.append("poste", searchParams.poste)
-    if (searchParams.ville) formData.append("ville", searchParams.ville)
-    if (searchParams.domaine) formData.append("domaine", searchParams.domaine)
-    if (typePosteParam) formData.append("typePoste", typePosteParam)
-    if (selectedTypeTravail) formData.append("typeTravail", selectedTypeTravail)
-    if (selectedExperienceLevel && selectedExperienceLevel !== "tous")
-      formData.append("niveauExperience", selectedExperienceLevel)
+      // Rechercher avec tous les paramètres
+      const formData = new FormData()
+      if (searchParams.poste) formData.append("poste", searchParams.poste)
+      if (searchParams.ville) formData.append("ville", searchParams.ville)
+      if (searchParams.domaine) formData.append("domaine", searchParams.domaine)
+      if (typePosteParam) formData.append("typePoste", typePosteParam)
+      if (selectedTypeTravail) formData.append("typeTravail", selectedTypeTravail)
+      if (selectedExperienceLevel && selectedExperienceLevel !== "tous")
+        formData.append("niveauExperience", selectedExperienceLevel)
 
-    // N'ajouter la date que si ce n'est pas "tous"
-    if (dateValue !== "tous") {
-      formData.append("datePublication", dateValue)
+      // N'ajouter la date que si ce n'est pas "tous"
+      if (dateValue !== "tous") {
+        formData.append("datePublication", dateValue)
+      }
+
+      // Appel direct à l'API pour éviter les problèmes de dépendances
+      setLoading(true)
+      fetch("http://127.0.0.1:8000/api/offresRecherche", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Erreur lors de la recherche")
+          }
+          return response.json()
+        })
+        .then((data) => {
+          setOffres(data)
+          setLoading(false)
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la recherche:", error)
+          setLoading(false)
+        })
     }
-
-    // Appel direct à l'API pour éviter les problèmes de dépendances
-    setLoading(true)
-    fetch("http://127.0.0.1:8000/api/offresRecherche", {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Erreur lors de la recherche")
-        }
-        return response.json()
-      })
-      .then((data) => {
-        setOffres(data)
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error("Erreur lors de la recherche:", error)
-        setLoading(false)
-      })
   }
 
   const handleExperienceLevelChange = (experienceValue: string) => {
-    setCurrentPage(1) // Réinitialiser à la première page lors d'une nouvelle recherche
     setSelectedExperienceLevel(experienceValue)
 
-    // Récupérer les types de poste sélectionnés
-    const selectedTypes = Object.entries(typesPoste)
-      .filter(([_, isChecked]) => isChecked)
-      .map(([type]) => type.toUpperCase())
-    const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
+    // Sur desktop, appliquer les filtres immédiatement
+    if (window.innerWidth >= 768) {
+      // Récupérer les types de poste sélectionnés
+      const selectedTypes = Object.entries(typesPoste)
+        .filter(([_, isChecked]) => isChecked)
+        .map(([type]) => type.toUpperCase())
+      const typePosteParam = selectedTypes.length > 0 ? selectedTypes.join(",") : ""
 
-    // Rechercher avec tous les paramètres
-    const formData = new FormData()
-    if (searchParams.poste) formData.append("poste", searchParams.poste)
-    if (searchParams.ville) formData.append("ville", searchParams.ville)
-    if (searchParams.domaine) formData.append("domaine", searchParams.domaine)
-    if (typePosteParam) formData.append("typePoste", typePosteParam)
-    if (selectedTypeTravail) formData.append("typeTravail", selectedTypeTravail)
-    if (selectedDatePublication !== "tous") formData.append("datePublication", selectedDatePublication)
+      // Rechercher avec tous les paramètres
+      const formData = new FormData()
+      if (searchParams.poste) formData.append("poste", searchParams.poste)
+      if (searchParams.ville) formData.append("ville", searchParams.ville)
+      if (searchParams.domaine) formData.append("domaine", searchParams.domaine)
+      if (typePosteParam) formData.append("typePoste", typePosteParam)
+      if (selectedTypeTravail) formData.append("typeTravail", selectedTypeTravail)
+      if (selectedDatePublication !== "tous") formData.append("datePublication", selectedDatePublication)
 
-    // Traitement spécial pour "Plus de 3 ans"
-    if (experienceValue === "plus_de_3ans") {
-      // Utiliser une requête personnalisée pour le backend
-      formData.append("niveauExperience_min", "4ans")
-    } else if (experienceValue !== "tous") {
-      // Pour les autres valeurs, utiliser le filtrage standard
-      formData.append("niveauExperience", experienceValue)
+      // Traitement spécial pour "Plus de 3 ans"
+      if (experienceValue === "plus_de_3ans") {
+        // Utiliser une requête personnalisée pour le backend
+        formData.append("niveauExperience_min", "4ans")
+      } else if (experienceValue !== "tous") {
+        // Pour les autres valeurs, utiliser le filtrage standard
+        formData.append("niveauExperience", experienceValue)
+      }
+
+      // Appel direct à l'API
+      setLoading(true)
+      fetch("http://127.0.0.1:8000/api/offresRecherche", {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Erreur lors de la recherche")
+          }
+          return response.json()
+        })
+        .then((data) => {
+          setOffres(data)
+          setLoading(false)
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la recherche:", error)
+          setLoading(false)
+        })
     }
-
-    // Appel direct à l'API
-    setLoading(true)
-    fetch("http://127.0.0.1:8000/api/offresRecherche", {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Erreur lors de la recherche")
-        }
-        return response.json()
-      })
-      .then((data) => {
-        setOffres(data)
-        setLoading(false)
-      })
-      .catch((error) => {
-        console.error("Erreur lors de la recherche:", error)
-        setLoading(false)
-      })
   }
 
   // Fonction pour gérer la saisie dans le champ de recherche
@@ -386,19 +540,43 @@ export default function JobsPage() {
     }
   }
 
-  // Fonction pour basculer l'affichage des filtres sur mobile
-  const toggleFilters = () => {
-    setShowFilters(!showFilters)
+  // Nombre de filtres actifs
+  const getActiveFiltersCount = () => {
+    let count = 0
+
+    // Compter les types de poste sélectionnés
+    Object.values(typesPoste).forEach((isChecked) => {
+      if (isChecked) count++
+    })
+
+    // Ajouter les autres filtres
+    if (selectedTypeTravail) count++
+    if (selectedDatePublication !== "tous") count++
+    if (selectedExperienceLevel !== "tous") count++
+
+    return count
   }
+
+  const activeFiltersCount = getActiveFiltersCount()
 
   return (
     <div className="jobs-page">
       <Header />
 
-      {/* Bouton de filtre mobile */}
+      {/* Bouton de filtre mobile avec badge */}
       <button className="filter-toggle-btn" onClick={toggleFilters}>
         <Filter size={24} />
+        {activeFiltersCount > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            {activeFiltersCount}
+          </span>
+        )}
       </button>
+
+      {/* Overlay pour mobile */}
+      {showFilters && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={closeFilters}></div>
+      )}
 
       {/* Header Section */}
       <section className="page-title">
@@ -489,202 +667,301 @@ export default function JobsPage() {
         <div className="auto-container">
           <div className="row">
             {/* Filters Column */}
-            <div className={`filters-column ${showFilters ? "show" : ""}`}>
+            <div ref={filtersRef} className={`filters-column ${showFilters ? "show" : ""}`}>
               <div className="inner-column">
                 <div className="filters-outer">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Filtres</h3>
+                    <button
+                      className="close-filters flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200"
+                      onClick={closeFilters}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {/* Active filters summary for mobile */}
+                  {activeFiltersCount > 0 && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg md:hidden">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-blue-700">
+                          {activeFiltersCount} filtre{activeFiltersCount > 1 ? "s" : ""} actif
+                          {activeFiltersCount > 1 ? "s" : ""}
+                        </span>
+                        <button
+                          className="text-xs text-blue-700 underline"
+                          onClick={() => {
+                            setTypesPoste({ cdi: false, cdd: false, alternance: false, stage: false })
+                            setSelectedTypeTravail(null)
+                            setSelectedDatePublication("tous")
+                            setSelectedExperienceLevel("tous")
+                            fetchOffres()
+                          }}
+                        >
+                          Réinitialiser
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Job Type */}
-                  <div className="switchbox-outer">
-                    <h4>Type de poste</h4>
-                    <ul className="switchbox">
-                      <li>
-                        <span className="title">CDD</span>
-                        <label className="switch">
-                          <input type="checkbox" name="cdd" checked={typesPoste.cdd} onChange={handleCheckboxChange} />
-                          <span className="slider round"></span>
-                        </label>
-                      </li>
-                      <li>
-                        <span className="title">CDI</span>
-                        <label className="switch">
-                          <input type="checkbox" name="cdi" checked={typesPoste.cdi} onChange={handleCheckboxChange} />
-                          <span className="slider round"></span>
-                        </label>
-                      </li>
-                      <li>
-                        <span className="title">Alternance</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            name="alternance"
-                            checked={typesPoste.alternance}
-                            onChange={handleCheckboxChange}
-                          />
-                          <span className="slider round"></span>
-                        </label>
-                      </li>
-                      <li>
-                        <span className="title">Stage</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            name="stage"
-                            checked={typesPoste.stage}
-                            onChange={handleCheckboxChange}
-                          />
-                          <span className="slider round"></span>
-                        </label>
-                      </li>
-                    </ul>
+                  <div className="switchbox-outer mb-4">
+                    <div
+                      className="flex justify-between items-center cursor-pointer py-2"
+                      onClick={() => toggleSection("typePoste")}
+                    >
+                      <h4 className="m-0">Type de poste</h4>
+                      <ChevronDown
+                        size={20}
+                        className={`transition-transform ${collapsedSections.typePoste ? "rotate-180" : ""}`}
+                      />
+                    </div>
+
+                    <div className={`mt-3 ${collapsedSections.typePoste ? "hidden" : "block"}`}>
+                      <ul className="switchbox">
+                        <li>
+                          <span className="title">CDD</span>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              name="cdd"
+                              checked={typesPoste.cdd}
+                              onChange={handleCheckboxChange}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </li>
+                        <li>
+                          <span className="title">CDI</span>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              name="cdi"
+                              checked={typesPoste.cdi}
+                              onChange={handleCheckboxChange}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </li>
+                        <li>
+                          <span className="title">Alternance</span>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              name="alternance"
+                              checked={typesPoste.alternance}
+                              onChange={handleCheckboxChange}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </li>
+                        <li>
+                          <span className="title">Stage</span>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              name="stage"
+                              checked={typesPoste.stage}
+                              onChange={handleCheckboxChange}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
 
                   {/* Date Posted */}
-                  <div className="checkbox-outer">
-                    <h4>Date de publication</h4>
-                    <ul className="checkboxes">
-                      <li>
-                        <input
-                          id="check-f"
-                          type="radio"
-                          name="datePublication"
-                          checked={selectedDatePublication === "tous"}
-                          onChange={() => handleDatePublicationChange("tous")}
-                        />
-                        <label htmlFor="check-f">Tous</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-a"
-                          type="radio"
-                          name="datePublication"
-                          checked={selectedDatePublication === "derniere_heure"}
-                          onChange={() => handleDatePublicationChange("derniere_heure")}
-                        />
-                        <label htmlFor="check-a">Derniere heure</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-b"
-                          type="radio"
-                          name="datePublication"
-                          checked={selectedDatePublication === "24_heure"}
-                          onChange={() => handleDatePublicationChange("24_heure")}
-                        />
-                        <label htmlFor="check-b">24 Heures</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-c"
-                          type="radio"
-                          name="datePublication"
-                          checked={selectedDatePublication === "derniers_7_jours"}
-                          onChange={() => handleDatePublicationChange("derniers_7_jours")}
-                        />
-                        <label htmlFor="check-c">Derniers 7 jours</label>
-                      </li>
-                    </ul>
+                  <div className="checkbox-outer mb-4">
+                    <div
+                      className="flex justify-between items-center cursor-pointer py-2"
+                      onClick={() => toggleSection("datePublication")}
+                    >
+                      <h4 className="m-0">Date de publication</h4>
+                      <ChevronDown
+                        size={20}
+                        className={`transition-transform ${collapsedSections.datePublication ? "rotate-180" : ""}`}
+                      />
+                    </div>
+
+                    <div className={`mt-3 ${collapsedSections.datePublication ? "hidden" : "block"}`}>
+                      <ul className="checkboxes">
+                        <li>
+                          <input
+                            id="check-f"
+                            type="radio"
+                            name="datePublication"
+                            checked={selectedDatePublication === "tous"}
+                            onChange={() => handleDatePublicationChange("tous")}
+                          />
+                          <label htmlFor="check-f">Tous</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-a"
+                            type="radio"
+                            name="datePublication"
+                            checked={selectedDatePublication === "derniere_heure"}
+                            onChange={() => handleDatePublicationChange("derniere_heure")}
+                          />
+                          <label htmlFor="check-a">Derniere heure</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-b"
+                            type="radio"
+                            name="datePublication"
+                            checked={selectedDatePublication === "24_heure"}
+                            onChange={() => handleDatePublicationChange("24_heure")}
+                          />
+                          <label htmlFor="check-b">24 Heures</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-c"
+                            type="radio"
+                            name="datePublication"
+                            checked={selectedDatePublication === "derniers_7_jours"}
+                            onChange={() => handleDatePublicationChange("derniers_7_jours")}
+                          />
+                          <label htmlFor="check-c">Derniers 7 jours</label>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
 
                   {/* Experience Level */}
-                  <div className="checkbox-outer">
-                    <h4>Niveau d'expérience</h4>
-                    <ul className="checkboxes square">
-                      <li>
-                        <input
-                          id="check-ba"
-                          type="radio"
-                          name="niveauExperience"
-                          checked={selectedExperienceLevel === "tous"}
-                          onChange={() => handleExperienceLevelChange("tous")}
-                        />
-                        <label htmlFor="check-ba">Tous</label>
-                      </li>
+                  <div className="checkbox-outer mb-4">
+                    <div
+                      className="flex justify-between items-center cursor-pointer py-2"
+                      onClick={() => toggleSection("experience")}
+                    >
+                      <h4 className="m-0">Niveau d'expérience</h4>
+                      <ChevronDown
+                        size={20}
+                        className={`transition-transform ${collapsedSections.experience ? "rotate-180" : ""}`}
+                      />
+                    </div>
 
-                      <li>
-                        <input
-                          id="check-sans"
-                          type="radio"
-                          name="niveauExperience"
-                          checked={selectedExperienceLevel === "sans_experience"}
-                          onChange={() => handleExperienceLevelChange("sans_experience")}
-                        />
-                        <label htmlFor="check-sans">Sans expérience</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-bb"
-                          type="radio"
-                          name="niveauExperience"
-                          checked={selectedExperienceLevel === "1ans"}
-                          onChange={() => handleExperienceLevelChange("1ans")}
-                        />
-                        <label htmlFor="check-bb">1 ans</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-bc"
-                          type="radio"
-                          name="niveauExperience"
-                          checked={selectedExperienceLevel === "2ans"}
-                          onChange={() => handleExperienceLevelChange("2ans")}
-                        />
-                        <label htmlFor="check-bc">2 ans</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-bd"
-                          type="radio"
-                          name="niveauExperience"
-                          checked={selectedExperienceLevel === "3ans"}
-                          onChange={() => handleExperienceLevelChange("3ans")}
-                        />
-                        <label htmlFor="check-bd">3 ans</label>
-                      </li>
-                      <li>
-                        <input
-                          id="check-be"
-                          type="radio"
-                          name="niveauExperience"
-                          checked={selectedExperienceLevel === "plus_de_3ans"}
-                          onChange={() => handleExperienceLevelChange("plus_de_3ans")}
-                        />
-                        <label htmlFor="check-be">Plus de 3 ans</label>
-                      </li>
-                    </ul>
+                    <div className={`mt-3 ${collapsedSections.experience ? "hidden" : "block"}`}>
+                      <ul className="checkboxes square">
+                        <li>
+                          <input
+                            id="check-ba"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "tous"}
+                            onChange={() => handleExperienceLevelChange("tous")}
+                          />
+                          <label htmlFor="check-ba">Tous</label>
+                        </li>
+
+                        <li>
+                          <input
+                            id="check-sans"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "sans_experience"}
+                            onChange={() => handleExperienceLevelChange("sans_experience")}
+                          />
+                          <label htmlFor="check-sans">Sans expérience</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-bb"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "1ans"}
+                            onChange={() => handleExperienceLevelChange("1ans")}
+                          />
+                          <label htmlFor="check-bb">1 ans</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-bc"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "2ans"}
+                            onChange={() => handleExperienceLevelChange("2ans")}
+                          />
+                          <label htmlFor="check-bc">2 ans</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-bd"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "3ans"}
+                            onChange={() => handleExperienceLevelChange("3ans")}
+                          />
+                          <label htmlFor="check-bd">3 ans</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-be"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "plus_de_3ans"}
+                            onChange={() => handleExperienceLevelChange("plus_de_3ans")}
+                          />
+                          <label htmlFor="check-be">Plus de 3 ans</label>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
 
                   {/* Tags */}
                   <div className="filter-block">
-                    <h4>Types de travilles</h4>
-                    <div className="work-type-tags">
-                      <button
-                        onClick={() => handleTypeTravailChange("À Temps plein")}
-                        className={`modern-work-button ${selectedTypeTravail === "À Temps plein" ? "active" : ""}`}
-                      >
-                        <Briefcase size={18} className="mr-2" />
-                        <span>À Temps plein</span>
-                      </button>
-                      <button
-                        onClick={() => handleTypeTravailChange("À temps partiel")}
-                        className={`modern-work-button ${selectedTypeTravail === "À temps partiel" ? "active" : ""}`}
-                      >
-                        <Clock3 size={18} className="mr-2" />
-                        <span>À temps partiel</span>
-                      </button>
-                      <button
-                        onClick={() => handleTypeTravailChange("Free mission")}
-                        className={`modern-work-button ${selectedTypeTravail === "Free mission" ? "active" : ""}`}
-                      >
-                        <AlarmClock size={18} className="mr-2" />
-                        <span>Free mission</span>
-                      </button>
-                      <button
-                        onClick={() => handleTypeTravailChange("Télétravail")}
-                        className={`modern-work-button ${selectedTypeTravail === "Télétravail" ? "active" : ""}`}
-                      >
-                        <Tv size={18} className="mr-2" />
-                        <span>Télétravail</span>
-                      </button>
+                    <div
+                      className="flex justify-between items-center cursor-pointer py-2"
+                      onClick={() => toggleSection("typeTravail")}
+                    >
+                      <h4 className="m-0">Types de travail</h4>
+                      <ChevronDown
+                        size={20}
+                        className={`transition-transform ${collapsedSections.typeTravail ? "rotate-180" : ""}`}
+                      />
                     </div>
+
+                    <div className={`${collapsedSections.typeTravail ? "hidden" : "block"}`}>
+                      <div className="work-type-tags">
+                        <button
+                          onClick={() => handleTypeTravailChange("À Temps plein")}
+                          className={`modern-work-button ${selectedTypeTravail === "À Temps plein" ? "active" : ""}`}
+                        >
+                          <Briefcase size={18} className="mr-2" />
+                          <span>À Temps plein</span>
+                        </button>
+                        <button
+                          onClick={() => handleTypeTravailChange("À temps partiel")}
+                          className={`modern-work-button ${selectedTypeTravail === "À temps partiel" ? "active" : ""}`}
+                        >
+                          <Clock3 size={18} className="mr-2" />
+                          <span>À temps partiel</span>
+                        </button>
+                        <button
+                          onClick={() => handleTypeTravailChange("Free mission")}
+                          className={`modern-work-button ${selectedTypeTravail === "Free mission" ? "active" : ""}`}
+                        >
+                          <AlarmClock size={18} className="mr-2" />
+                          <span>Free mission</span>
+                        </button>
+                        <button
+                          onClick={() => handleTypeTravailChange("Télétravail")}
+                          className={`modern-work-button ${selectedTypeTravail === "Télétravail" ? "active" : ""}`}
+                        >
+                          <Tv size={18} className="mr-2" />
+                          <span>Télétravail</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Apply filters button for mobile */}
+                  <div className="mt-6 md:hidden">
+                    <button className="find-jobs-btn w-full" onClick={applyFilters}>
+                      Appliquer les filtres
+                    </button>
                   </div>
                 </div>
               </div>
@@ -693,6 +970,30 @@ export default function JobsPage() {
             {/* Content Column */}
             <div className="content-column">
               <div className="ls-outer">
+                {/* Active filters summary for desktop */}
+                {activeFiltersCount > 0 && (
+                  <div className="hidden md:block mb-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-blue-700">
+                        {activeFiltersCount} filtre{activeFiltersCount > 1 ? "s" : ""} actif
+                        {activeFiltersCount > 1 ? "s" : ""}
+                      </span>
+                      <button
+                        className="text-xs text-blue-700 underline"
+                        onClick={() => {
+                          setTypesPoste({ cdi: false, cdd: false, alternance: false, stage: false })
+                          setSelectedTypeTravail(null)
+                          setSelectedDatePublication("tous")
+                          setSelectedExperienceLevel("tous")
+                          fetchOffres()
+                        }}
+                      >
+                        Réinitialiser tous les filtres
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Job Listings */}
                 {loading ? (
                   <div className="loader-container">

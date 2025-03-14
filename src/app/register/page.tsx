@@ -225,7 +225,7 @@ export default function Register() {
               }}
             >
               <img
-                src="/register.jpg"
+                src="/signup.webp"
                 alt="Logo"
                 className="w-auto h-auto object-contain"
                 style={{
@@ -556,4 +556,3 @@ export default function Register() {
     </div>
   )
 }
-

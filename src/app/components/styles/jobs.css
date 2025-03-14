@@ -106,6 +106,7 @@
   position: relative;
   width: 33.333333%;
   padding: 0 15px;
+  transition: all 0.3s ease;
 }
 
 .inner-column {
@@ -728,28 +729,29 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 20px;
-  border-radius: 12px;
-  border: none;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
   background-color: white;
   transition: all 0.2s ease;
   cursor: pointer;
-  font-weight: 400;
-  font-size: 15px;
-  color: #4b5563;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+  font-size: 14px;
+  color: #64748b;
   text-align: left;
 }
 
 .modern-work-button:hover {
-  background-color: #f9fafb;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .modern-work-button.active {
-  background-color: #f3f4f6;
+  background-color: #ebf5ff;
   color: #1967d2;
+  border-color: #1967d2;
 }
 
 .button-icon {
@@ -836,42 +838,6 @@ input:checked + .slider:before {
   margin-top: 1.5rem;
 }
 
-/* Styles pour les boutons de type de travail */
-.work-type-tags {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 15px;
-}
-
-.modern-work-button {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background-color: white;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-  color: #64748b;
-  text-align: left;
-}
-
-.modern-work-button:hover {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
-
-.modern-work-button.active {
-  background-color: #ebf5ff;
-  color: #1967d2;
-  border-color: #1967d2;
-}
-
 /* Styles pour le loader */
 .loader-container {
   display: flex;
@@ -945,10 +911,28 @@ input:checked + .slider:before {
 
   .form-group {
     width: 100%;
+    margin-bottom: 10px;
   }
 
   .job-info {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .job-block .content {
+    padding-left: 0;
+  }
+
+  /* Improved mobile filter experience */
+  .filters-outer {
+    height: 100%;
+    border-radius: 0;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  /* Make job cards more mobile-friendly */
+  .job-block .inner-box {
+    padding: 20px;
   }
 }

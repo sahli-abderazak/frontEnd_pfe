@@ -88,27 +88,26 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-5xl overflow-hidden rounded-2xl shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:py-12 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-5xl overflow-hidden rounded-xl md:rounded-2xl shadow-lg md:shadow-xl">
         <div className="flex flex-col md:flex-row">
           {/* Image Section */}
-          <div className="md:w-1/2 relative">
+          <div className="md:w-1/2 relative flex items-center justify-center h-48 md:h-full bg-white">
             <div
-              className="h-48 md:h-full w-full bg-cover bg-center bg-no-repeat"
+              className="w-32 h-32 sm:w-40 sm:h-40 md:w-64 md:h-64 lg:w-80 lg:h-80 bg-contain bg-center bg-no-repeat mx-auto mt-8 md:mt-12"
               style={{
                 backgroundImage: "url(/Logo.jpeg)",
                 backgroundColor: "#ffffff",
-                opacity: 0.9,
               }}
             />
           </div>
 
           {/* Form Section */}
-          <div className="md:w-1/2 p-8 md:p-12 bg-white">
+          <div className="md:w-1/2 p-6 md:p-8 lg:p-12 bg-white">
             <div className="max-w-md mx-auto">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">Bienvenue</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">Bienvenue</h2>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <div className="relative">
@@ -153,7 +152,7 @@ export default function Login() {
                 {/* Login Button */}
                 <Button
                   type="submit"
-                  className="w-full bg-[#2c4999] hover:bg-[#233a7a] text-white font-semibold py-3 rounded-lg transition-colors duration-200"
+                  className="w-full bg-[#2c4999] hover:bg-[#233a7a] text-white font-semibold py-2.5 md:py-3 rounded-lg transition-colors duration-200"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -171,7 +170,7 @@ export default function Login() {
               <div className="mt-6 space-y-4">
                 <Button
                   onClick={handleGoogleLogin}
-                  className="w-full border border-red-500 text-red-500 bg-white hover:bg-red-100 py-3 rounded-lg flex items-center justify-center space-x-2"
+                  className="w-full border border-red-500 text-red-500 bg-white hover:bg-red-100 py-2.5 md:py-3 rounded-lg flex items-center justify-center space-x-2"
                 >
                   <Mail className="h-5 w-5" />
                   <span>Se connecter avec Google</span>
@@ -193,7 +192,7 @@ export default function Login() {
 
       {/* Error Dialog */}
       <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-w-[90%] mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center text-red-600">
               <AlertCircle className="h-6 w-6 mr-2" />
@@ -213,4 +212,3 @@ export default function Login() {
     </div>
   )
 }
-

@@ -166,7 +166,12 @@ export function ReviewsTable({ refresh }: { refresh: boolean }) {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Email:</span>
-                  <span className="detail-value">{user.email}</span>
+                  <span
+                    className="detail-value cursor-pointer text-blue-600 hover:underline"
+                    onClick={() => window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${user.email}`, "_blank")}
+                  >
+                    {user.email}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Téléphone:</span>
@@ -205,8 +210,6 @@ export function ReviewsTable({ refresh }: { refresh: boolean }) {
         ))}
       </div>
 
-      
-
       {selectedUser && (
         <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} />
       )}
@@ -216,9 +219,7 @@ export function ReviewsTable({ refresh }: { refresh: boolean }) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmation d'archivage</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir archiver cet utilisateur ?
-            </DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir archiver cet utilisateur ?</DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end">
             <Button type="button" variant="outline" onClick={() => setIsArchiveDialogOpen(false)}>

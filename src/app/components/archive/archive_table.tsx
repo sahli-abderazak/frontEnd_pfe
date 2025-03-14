@@ -100,7 +100,6 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 
       // Utiliser une notification plus moderne au lieu de alert
       // Pour l'instant on garde alert pour ne pas ajouter de nouveaux composants
-      alert("Utilisateur désarchivé avec succès!")
     } catch (error) {
       console.error("Erreur de désarchivation:", error)
       setError(error instanceof Error ? error.message : "Erreur lors de la désarchivation de l'utilisateur")
@@ -388,9 +387,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmer la désarchivation</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir désarchiver cet utilisateur ? 
-            </DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir désarchiver cet utilisateur ?</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>

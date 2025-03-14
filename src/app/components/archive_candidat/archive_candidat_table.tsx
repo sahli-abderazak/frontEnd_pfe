@@ -7,9 +7,30 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Download, Undo, Mail, Phone, MapPin, Briefcase, Calendar, GraduationCap, Clock } from "lucide-react"
+import {
+  Eye,
+  Download,
+  Undo,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Calendar,
+  GraduationCap,
+  Clock,
+  X,
+  ChevronLeft,
+} from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { useMediaQuery } from "@/app/hooks/use-media-query"
 
 // Modifier la définition de l'interface Candidat pour inclure l'offre directement
 interface Candidat {
@@ -58,6 +79,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isUnarchiveDialogOpen, setIsUnarchiveDialogOpen] = useState(false)
   const [candidatToUnarchive, setCandidatToUnarchive] = useState<number | null>(null)
+  const isMobile = useMediaQuery("(max-width: 640px)")
 
   useEffect(() => {
     fetchArchivedCandidats()
@@ -188,7 +210,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {candidats.map((candidat) => {
           const offre = candidat.offre
           return (
@@ -196,64 +218,64 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
               key={candidat.id}
               className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full"
             >
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-4">
-                  <Avatar className={`h-12 w-12 ${getColorClass(candidat.nom)}`}>
+              <CardHeader className="pb-2 px-4 sm:px-6">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
                     <AvatarFallback className="text-white font-medium">
                       {getInitials(candidat.nom, candidat.prenom)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
-                    <h3 className="font-semibold text-lg leading-none tracking-tight">
+                    <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
                       {candidat.prenom} {candidat.nom}
                     </h3>
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                       <Briefcase className="mr-1 h-3 w-3" />
-                      {offre?.poste || "N/A"}
+                      <span className="truncate max-w-[180px] sm:max-w-none">{offre?.poste || "N/A"}</span>
                     </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pb-2 flex-grow">
-                <div className="grid gap-2 text-sm">
+              <CardContent className="pb-2 px-4 sm:px-6 flex-grow">
+                <div className="grid gap-2 text-xs sm:text-sm">
                   <div className="flex items-center">
-                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Mail className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                     <a href={`mailto:${candidat.email}`} className="text-blue-600 hover:underline truncate">
                       {candidat.email}
                     </a>
                   </div>
                   <div className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{candidat.tel}</span>
+                    <Phone className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{candidat.tel}</span>
                   </div>
                   <div className="flex items-center">
-                    <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>
+                    <MapPin className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">
                       {candidat.ville}, {candidat.pays}
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <GraduationCap className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{candidat.niveauEtude}</span>
+                    <GraduationCap className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{candidat.niveauEtude}</span>
                   </div>
                   <div className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{candidat.niveauExperience}</span>
+                    <Clock className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate">{candidat.niveauExperience}</span>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-1 sm:gap-2">
                   {candidat.offre && (
                     <>
-                      <Badge variant="outline" className="bg-blue-50">
+                      <Badge variant="outline" className="bg-blue-50 text-xs">
                         {candidat.offre.departement}
                       </Badge>
-                      <Badge variant="outline" className="bg-emerald-50">
+                      <Badge variant="outline" className="bg-emerald-50 text-xs">
                         {candidat.offre.domaine}
                       </Badge>
                     </>
                   )}
-                  <Badge variant="outline" className="bg-amber-50">
-                    <Calendar className="mr-1 h-3 w-3" />
+                  <Badge variant="outline" className="bg-amber-50 text-xs">
+                    <Calendar className="mr-1 h-2 w-2 sm:h-3 sm:w-3" />
                     {new Date(candidat.created_at).toLocaleDateString("fr-FR", {
                       day: "numeric",
                       month: "short",
@@ -262,28 +284,65 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
                   </Badge>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between pt-2 mt-auto">
-                <Button variant="outline" size="sm" onClick={() => handleViewDetails(candidat)}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Détails
-                </Button>
-                <div className="flex gap-2">
-                  {candidat.cv && (
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadCV(candidat.cv)}>
-                      <Download className="mr-2 h-4 w-4" />
-                      CV
+              <CardFooter className="flex justify-between pt-2 px-4 sm:px-6 mt-auto">
+                {isMobile ? (
+                  <div className="flex w-full gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-8 px-2"
+                      onClick={() => handleViewDetails(candidat)}
+                    >
+                      <Eye className="h-3 w-3 sm:mr-2" />
+                      <span className="hidden sm:inline">Détails</span>
                     </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUnarchive(candidat.id)}
-                    disabled={unarchiving === candidat.id}
-                  >
-                    <Undo className="mr-2 h-4 w-4" />
-                    {unarchiving === candidat.id ? "Désarchivage..." : "Désarchiver"}
-                  </Button>
-                </div>
+                    {candidat.cv && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 px-2"
+                        onClick={() => handleDownloadCV(candidat.cv)}
+                      >
+                        <Download className="h-3 w-3 sm:mr-2" />
+                        <span className="hidden sm:inline">CV</span>
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-8 px-2"
+                      onClick={() => handleUnarchive(candidat.id)}
+                      disabled={unarchiving === candidat.id}
+                    >
+                      <Undo className="h-3 w-3 sm:mr-2" />
+                      <span className="hidden sm:inline">{unarchiving === candidat.id ? "..." : "Désarchiver"}</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(candidat)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Détails
+                    </Button>
+                    <div className="flex gap-2">
+                      {candidat.cv && (
+                        <Button variant="outline" size="sm" onClick={() => handleDownloadCV(candidat.cv)}>
+                          <Download className="mr-2 h-4 w-4" />
+                          CV
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnarchive(candidat.id)}
+                        disabled={unarchiving === candidat.id}
+                      >
+                        <Undo className="mr-2 h-4 w-4" />
+                        {unarchiving === candidat.id ? "Désarchivage..." : "Désarchiver"}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardFooter>
             </Card>
           )
@@ -296,167 +355,227 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
         </div>
       )}
 
+      {/* Mobile-friendly Details Modal */}
       {selectedCandidat && isDetailsOpen && (
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Détails du candidat</DialogTitle>
-              <DialogDescription>Informations complètes du candidat et de l'offre associée</DialogDescription>
-            </DialogHeader>
-
-            <div className="flex items-center space-x-4 mb-6">
-              <Avatar className={`h-16 w-16 ${getColorClass(selectedCandidat.nom)}`}>
-                <AvatarFallback className="text-white text-xl font-medium">
-                  {getInitials(selectedCandidat.nom, selectedCandidat.prenom)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="text-2xl font-bold">
-                  {selectedCandidat.prenom} {selectedCandidat.nom}
-                </h2>
-                <p className="text-muted-foreground flex items-center">
-                  <Briefcase className="mr-1 h-4 w-4" />
-                  {selectedCandidat.offre?.poste || "N/A"} • {selectedCandidat.offre?.departement || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informations personnelles</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Email</p>
-                      <a href={`mailto:${selectedCandidat.email}`} className="text-blue-600 hover:underline">
-                        {selectedCandidat.email}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Téléphone</p>
-                      <p>{selectedCandidat.tel}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <MapPin className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Adresse</p>
-                      <p>
-                        {selectedCandidat.ville}, {selectedCandidat.codePostal}
-                      </p>
-                      <p>{selectedCandidat.pays}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informations professionnelles</h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <GraduationCap className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Niveau d'étude</p>
-                      <p>{selectedCandidat.niveauEtude}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Clock className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Expérience</p>
-                      <p>{selectedCandidat.niveauExperience}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Calendar className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Dates</p>
-                      <p>
-                        Candidature:{" "}
-                        {selectedCandidat.created_at
-                          ? new Date(selectedCandidat.created_at).toLocaleDateString("fr-FR")
-                          : "N/A"}
-                      </p>
-                      {selectedCandidat.offre?.datePublication && (
-                        <p>
-                          Publication: {new Date(selectedCandidat.offre.datePublication).toLocaleDateString("fr-FR")}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Détails de l'offre</h3>
-              {selectedCandidat.offre ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="font-medium">Poste</p>
-                    <p>{selectedCandidat.offre.poste}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Département</p>
-                    <p>{selectedCandidat.offre.departement}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Domaine</p>
-                    <p>{selectedCandidat.offre.domaine}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-muted-foreground">Informations de l'offre non disponibles</div>
-              )}
-            </div>
-
-            <div className="flex justify-between mt-6">
-              {selectedCandidat.cv && (
-                <Button onClick={() => handleDownloadCV(selectedCandidat.cv)}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger le CV
+        <div
+          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isMobile ? "p-0" : "p-4"}`}
+        >
+          <div
+            className={`bg-white rounded-lg shadow-lg overflow-y-auto ${isMobile ? "w-full h-full" : "max-w-3xl w-full max-h-[80vh]"}`}
+          >
+            {/* Mobile Header */}
+            {isMobile && (
+              <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between">
+                <Button variant="ghost" size="sm" onClick={() => setIsDetailsOpen(false)}>
+                  <ChevronLeft className="h-5 w-5" />
                 </Button>
+                <h2 className="text-lg font-semibold">Détails du candidat</h2>
+                <Button variant="ghost" size="sm" onClick={() => setIsDetailsOpen(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
+
+            <div className={`${isMobile ? "p-4" : "p-6"}`}>
+              {!isMobile && (
+                <div className="flex justify-between mb-2">
+                  <h2 className="text-xl font-semibold">Détails du candidat</h2>
+                  <Button variant="ghost" size="sm" onClick={() => setIsDetailsOpen(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex items-center space-x-4 mb-6">
+                <Avatar className={`${isMobile ? "h-12 w-12" : "h-16 w-16"} ${getColorClass(selectedCandidat.nom)}`}>
+                  <AvatarFallback className="text-white text-xl font-medium">
+                    {getInitials(selectedCandidat.nom, selectedCandidat.prenom)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className={`${isMobile ? "text-xl" : "text-2xl"} font-bold`}>
+                    {selectedCandidat.prenom} {selectedCandidat.nom}
+                  </h2>
+                  <p className="text-muted-foreground flex items-center text-sm">
+                    <Briefcase className="mr-1 h-4 w-4" />
+                    <span className="truncate">
+                      {selectedCandidat.offre?.poste || "N/A"} • {selectedCandidat.offre?.departement || "N/A"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className={`grid grid-cols-1 ${isMobile ? "gap-4" : "md:grid-cols-2 gap-6"} mb-6`}>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Informations personnelles</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Email</p>
+                        <a
+                          href={`mailto:${selectedCandidat.email}`}
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {selectedCandidat.email}
+                        </a>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Téléphone</p>
+                        <p>{selectedCandidat.tel}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <MapPin className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Adresse</p>
+                        <p>
+                          {selectedCandidat.ville}, {selectedCandidat.codePostal}
+                        </p>
+                        <p>{selectedCandidat.pays}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Informations professionnelles</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <GraduationCap className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Niveau d'étude</p>
+                        <p>{selectedCandidat.niveauEtude}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Clock className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Expérience</p>
+                        <p>{selectedCandidat.niveauExperience}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Calendar className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Dates</p>
+                        <p>
+                          Candidature:{" "}
+                          {selectedCandidat.created_at
+                            ? new Date(selectedCandidat.created_at).toLocaleDateString("fr-FR")
+                            : "N/A"}
+                        </p>
+                        {selectedCandidat.offre?.datePublication && (
+                          <p>
+                            Publication: {new Date(selectedCandidat.offre.datePublication).toLocaleDateString("fr-FR")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Détails de l'offre</h3>
+                {selectedCandidat.offre ? (
+                  <div className={`grid ${isMobile ? "grid-cols-1 gap-3" : "grid-cols-2 gap-4"}`}>
+                    <div>
+                      <p className="font-medium">Poste</p>
+                      <p>{selectedCandidat.offre.poste}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Département</p>
+                      <p>{selectedCandidat.offre.departement}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Domaine</p>
+                      <p>{selectedCandidat.offre.domaine}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">Informations de l'offre non disponibles</div>
+                )}
+              </div>
+
+              {!isMobile && (
+                <div className="flex justify-between mt-6">
+                  {selectedCandidat.cv && (
+                    <Button onClick={() => handleDownloadCV(selectedCandidat.cv)}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Télécharger le CV
+                    </Button>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleUnarchive(selectedCandidat.id)}
+                      disabled={unarchiving === selectedCandidat.id}
+                    >
+                      <Undo className="mr-2 h-4 w-4" />
+                      {unarchiving === selectedCandidat.id ? "Désarchivage..." : "Désarchiver"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+                      Fermer
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Footer */}
+            {isMobile && (
+              <div className="sticky bottom-0 border-t bg-white p-4 space-y-2">
+                {selectedCandidat.cv && (
+                  <Button onClick={() => handleDownloadCV(selectedCandidat.cv)} className="w-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    Télécharger le CV
+                  </Button>
+                )}
                 <Button
                   onClick={() => handleUnarchive(selectedCandidat.id)}
                   disabled={unarchiving === selectedCandidat.id}
+                  className="w-full"
                 >
                   <Undo className="mr-2 h-4 w-4" />
                   {unarchiving === selectedCandidat.id ? "Désarchivage..." : "Désarchiver"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+                <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="w-full">
                   Fermer
                 </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Dialog de confirmation de désarchivage */}
       <Dialog open={isUnarchiveDialogOpen} onOpenChange={setIsUnarchiveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
             <DialogTitle>Confirmation de désarchivage</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir désarchiver ce candidat ? 
-            </DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir désarchiver ce candidat ?</DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setIsUnarchiveDialogOpen(false)}>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2 mt-4" : "flex justify-end gap-3 mt-4"}`}>
+            <Button
+              variant="outline"
+              onClick={() => setIsUnarchiveDialogOpen(false)}
+              className={isMobile ? "w-full" : ""}
+            >
               Annuler
             </Button>
-            <Button onClick={confirmUnarchive} disabled={unarchiving === candidatToUnarchive}>
+            <Button
+              onClick={confirmUnarchive}
+              disabled={unarchiving === candidatToUnarchive}
+              className={isMobile ? "w-full" : ""}
+            >
               <Undo className="mr-2 h-4 w-4" />
               {unarchiving === candidatToUnarchive ? "Désarchivage..." : "Désarchiver"}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
