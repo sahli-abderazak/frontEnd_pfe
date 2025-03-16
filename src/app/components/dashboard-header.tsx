@@ -286,12 +286,7 @@ export function DashboardHeader() {
         </div>
 
         {/* Search - hidden on mobile, shown on md and up */}
-        <div className="hidden md:flex md:w-full md:max-w-sm items-center space-x-2 mx-4">
-          <Input type="search" placeholder="Rechercher..." className="h-9 md:w-[300px] lg:w-[300px]" />
-          <Button size="icon" variant="ghost">
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
+
 
         <div className="flex items-center gap-2">
           {/* Mobile search trigger */}
@@ -380,7 +375,7 @@ export function DashboardHeader() {
                     variant="outline"
                     size="sm"
                     className="w-full bg-white hover:bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900 dark:text-purple-300 dark:border-purple-800 dark:hover:bg-purple-800"
-                    onClick={() => (window.location.href = "/notifications")}
+                    onClick={() => (window.location.href = "/notifications_admin")}
                   >
                     Voir toutes les notifications
                   </Button>
