@@ -9,27 +9,29 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Lock, Mail, Loader2, AlertCircle, User, Phone, MapPin, Building } from "lucide-react"
+import { Lock, Mail, Loader2, AlertCircle, Phone, MapPin, Building, Globe, FileText } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    nom: "",
-    prenom: "",
+    // Suppression de: nom, prenom, departement, poste
     email: "",
     password: "",
-    departement: "",
     numTel: "",
-    poste: "",
     adresse: "",
     role: "recruteur",
     nom_societe: "",
+    // Nouveaux champs
+    apropos: "",
+    lien_site_web: "",
+    fax: "",
+    domaine_activite: "",
   })
   const [image, setImage] = useState<File | null>(null)
-  const [cv, setCv] = useState<File | null>(null)
+  // Suppression de: cv
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const cvInputRef = useRef<HTMLInputElement>(null)
+  // Suppression de: cvInputRef
 
   const router = useRouter()
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -41,36 +43,12 @@ export default function Register() {
   const [telError, setTelError] = useState<string | null>(null)
   const [societeError, setCompanyError] = useState<string | null>(null)
 
-  const departements = [
-    "Ressources Humaines",
-    "Finance",
-    "Marketing",
-    "Informatique",
-    "Commercial",
-    "Production",
-    "Recherche & Développement",
-    "Juridique",
-    "Communication",
-  ]
-
-  const postes = {
-    "Ressources Humaines": ["Recruteur", "Gestionnaire RH", "Responsable Formation", "DRH"],
-    Finance: ["Comptable", "Contrôleur de Gestion", "Analyste Financier", "Directeur Financier"],
-    Marketing: ["Chef de Produit", "Responsable Marketing", "Community Manager", "Analyste Marketing"],
-    Informatique: ["Développeur", "Chef de Projet", "Architecte Solution", "Admin Système", "DevOps"],
-    Commercial: ["Commercial", "Responsable Commercial", "Directeur Commercial", "Account Manager"],
-    Production: ["Chef d'Équipe", "Responsable Production", "Ingénieur Production"],
-    "Recherche & Développement": ["Ingénieur R&D", "Chef de Projet R&D", "Directeur R&D"],
-    Juridique: ["Juriste", "Responsable Juridique", "Avocat d'Entreprise"],
-    Communication: ["Chargé de Communication", "Responsable Communication", "Attaché de Presse"],
-  }
-
   const handleGoogleLogin = () => {
     // Implement Google login
     console.log("Google login clicked")
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
 
     // Réinitialiser les erreurs spécifiques lors de la modification
@@ -90,25 +68,9 @@ export default function Register() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    // Si on change le département, on réinitialise le poste
-    if (name === "departement") {
-      setFormData((prev) => ({ ...prev, departement: value, poste: "" }))
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }))
-    }
-  }
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0])
-    }
-  }
-
-  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setCv(e.target.files[0])
     }
   }
 
@@ -155,7 +117,7 @@ export default function Register() {
 
     // Add files if they exist
     if (image) formDataToSend.append("image", image)
-    if (cv) formDataToSend.append("cv", cv)
+    // Suppression de: cv
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/register", {
@@ -245,51 +207,28 @@ export default function Register() {
               <h2 className="text-4xl font-extrabold text-gray-900 mb-8 tracking-tight">Créer un compte</h2>
 
               <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Nom et Prénom */}
-                <div className="flex space-x-4">
-                  <div className="w-1/2 space-y-2">
-                    <Label className="text-sm font-medium text-gray-700" htmlFor="nom">
-                      Nom
-                    </Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <Input
-                        id="nom"
-                        name="nom"
-                        type="text"
-                        placeholder="Entrez votre nom"
-                        className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
-                        required
-                        value={formData.nom}
-                        onChange={handleChange}
-                      />
+                 {/* Nom de la société */}
+                 <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700" htmlFor="nom_societe">
+                    Nom de la société
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Building className="h-5 w-5 text-gray-400" />
                     </div>
+                    <Input
+                      id="nom_societe"
+                      name="nom_societe"
+                      type="text"
+                      placeholder="Entrez le nom de votre société"
+                      className={`pl-10 bg-white border ${societeError ? "border-red-500" : "border-gray-300"} focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200`}
+                      required
+                      value={formData.nom_societe}
+                      onChange={handleChange}
+                    />
                   </div>
-
-                  <div className="w-1/2 space-y-2">
-                    <Label className="text-sm font-medium text-gray-700" htmlFor="prenom">
-                      Prénom
-                    </Label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <Input
-                        id="prenom"
-                        name="prenom"
-                        type="text"
-                        placeholder="Entrez votre prénom"
-                        className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
-                        required
-                        value={formData.prenom}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
+                  {societeError && <p className="text-red-500 text-sm mt-1">Cette société est déjà inscrite.</p>}
                 </div>
-
                 {/* Email */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700" htmlFor="email">
@@ -336,75 +275,27 @@ export default function Register() {
                   {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
                 </div>
 
-                {/* Nom de la société */}
+               
+
+                {/* Domaine d'activité */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700" htmlFor="nom_societe">
-                    Nom de la société
+                  <Label className="text-sm font-medium text-gray-700" htmlFor="domaine_activite">
+                    Domaine d'activité
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Building className="h-5 w-5 text-gray-400" />
+                      <FileText className="h-5 w-5 text-gray-400" />
                     </div>
                     <Input
-                      id="nom_societe"
-                      name="nom_societe"
+                      id="domaine_activite"
+                      name="domaine_activite"
                       type="text"
-                      placeholder="Entrez le nom de votre société"
-                      className={`pl-10 bg-white border ${societeError ? "border-red-500" : "border-gray-300"} focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200`}
+                      placeholder="Entrez votre domaine d'activité"
+                      className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
                       required
-                      value={formData.nom_societe}
+                      value={formData.domaine_activite}
                       onChange={handleChange}
                     />
-                  </div>
-                  {societeError && <p className="text-red-500 text-sm mt-1">Cette société est déjà inscrite.</p>}
-                </div>
-
-                {/* Département et Poste */}
-                <div className="flex space-x-4">
-                  <div className="w-1/2 space-y-2">
-                    <Label className="text-sm font-medium text-gray-700" htmlFor="departement">
-                      Département
-                    </Label>
-                    <Select
-                      name="departement"
-                      value={formData.departement}
-                      onValueChange={(value) => handleSelectChange("departement", value)}
-                    >
-                      <SelectTrigger className="pl-3 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200">
-                        <SelectValue placeholder="Département" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departements.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="w-1/2 space-y-2">
-                    <Label className="text-sm font-medium text-gray-700" htmlFor="poste">
-                      Poste
-                    </Label>
-                    <Select
-                      name="poste"
-                      value={formData.poste}
-                      onValueChange={(value) => handleSelectChange("poste", value)}
-                      disabled={!formData.departement}
-                    >
-                      <SelectTrigger className="pl-3 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200">
-                        <SelectValue placeholder="Poste" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {formData.departement &&
-                          postes[formData.departement as keyof typeof postes].map((poste) => (
-                            <SelectItem key={poste} value={poste}>
-                              {poste}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -432,6 +323,30 @@ export default function Register() {
                     {telError && <p className="text-red-500 text-sm mt-1">{telError}</p>}
                   </div>
 
+                  {/* Fax */}
+                  <div className="w-1/2 space-y-2">
+                    <Label className="text-sm font-medium text-gray-700" htmlFor="fax">
+                      Fax
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        id="fax"
+                        name="fax"
+                        type="text"
+                        placeholder="Entrez votre fax"
+                        className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                        value={formData.fax}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Adresse et Site Web */}
+                <div className="flex space-x-4">
                   {/* Adresse */}
                   <div className="w-1/2 space-y-2">
                     <Label className="text-sm font-medium text-gray-700" htmlFor="adresse">
@@ -453,12 +368,48 @@ export default function Register() {
                       />
                     </div>
                   </div>
+
+                  {/* Site Web */}
+                  <div className="w-1/2 space-y-2">
+                    <Label className="text-sm font-medium text-gray-700" htmlFor="lien_site_web">
+                      Site Web
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Globe className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        id="lien_site_web"
+                        name="lien_site_web"
+                        type="url"
+                        placeholder="https://www.example.com"
+                        className="pl-10 bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                        value={formData.lien_site_web}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* À propos */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700" htmlFor="apropos">
+                    À propos
+                  </Label>
+                  <Textarea
+                    id="apropos"
+                    name="apropos"
+                    placeholder="Décrivez votre entreprise"
+                    className="min-h-[100px] bg-white border border-gray-300 focus:border-[#2c4999] focus:ring-[#2c4999] rounded-lg shadow-sm transition-all duration-200"
+                    value={formData.apropos}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 {/* Image de profil */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700" htmlFor="image">
-                    Image de profil
+                    Logo de l'entreprise
                   </Label>
                   <input
                     ref={imageInputRef}
@@ -470,20 +421,6 @@ export default function Register() {
                   />
                 </div>
 
-                {/* CV */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700" htmlFor="cv">
-                    Télécharger votre CV
-                  </Label>
-                  <input
-                    ref={cvInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleCvChange}
-                    className="w-full text-sm text-gray-500 file:bg-[#e1eff9] file:px-4 file:py-2 file:rounded-md file:border-none file:text-[#39739d] cursor-pointer"
-                    required
-                  />
-                </div>
                 <input type="hidden" name="role" value={formData.role} />
 
                 {/* Submit Button */}
@@ -556,3 +493,4 @@ export default function Register() {
     </div>
   )
 }
+

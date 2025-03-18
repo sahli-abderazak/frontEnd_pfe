@@ -13,12 +13,11 @@ import Pusher from "pusher-js"
 // Types
 interface UserType {
   id: number
-  nom: string
-  prenom: string
+  nom?: string
   email: string
   role: string
   image?: string
-  nom_societe?: string
+  nom_societe: string
   last_message_at?: string
 }
 
@@ -354,8 +353,6 @@ export default function ChatPage() {
 
     try {
       setError(null)
-      console.log(`Récupération des messages avec ${selectedUser.nom}...`)
-
       const response = await fetch(`${API_URL}/api/messages/${selectedUser.id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -414,8 +411,6 @@ export default function ChatPage() {
     setError(null)
 
     try {
-      console.log(`Envoi d'un message à ${selectedUser.nom}...`)
-
       const response = await fetch(`${API_URL}/api/messages`, {
         method: "POST",
         headers: {
@@ -453,7 +448,7 @@ export default function ChatPage() {
   }
 
   const getUserTitle = (user: UserType) => {
-    return `${user.nom} ${user.prenom}`
+    return user.nom_societe
   }
 
   const getUserSubtitle = (user: UserType) => {
@@ -466,7 +461,12 @@ export default function ChatPage() {
   }
 
   const getInitials = (user: UserType) => {
-    return `${user.nom.charAt(0)}${user.prenom.charAt(0)}`.toUpperCase()
+    // Get first two characters of company name or first character if only one word
+    const parts = user.nom_societe.split(" ")
+    if (parts.length > 1) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase()
+    }
+    return user.nom_societe.substring(0, 2).toUpperCase()
   }
 
   // Formater la date du dernier message
@@ -491,9 +491,8 @@ export default function ChatPage() {
   // Filtrer les utilisateurs en fonction du terme de recherche
   const filteredUsers = users.filter(
     (user) =>
-      `${user.nom} ${user.prenom}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.nom_societe && user.nom_societe.toLowerCase().includes(searchTerm.toLowerCase())),
+      user.nom_societe.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   // Afficher le chargement
@@ -601,7 +600,7 @@ export default function ChatPage() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate text-gray-900 dark:text-gray-100">
-                  {currentUser ? `${currentUser.nom} ${currentUser.prenom}` : "Utilisateur"}
+                  {currentUser ? currentUser.nom_societe : "Utilisateur"}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                   <span

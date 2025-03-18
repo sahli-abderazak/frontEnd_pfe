@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { UserDetailsDialog } from "./UserDetailsDialog"
+
 import {
   Dialog,
   DialogContent,
@@ -17,20 +17,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import "../styles/employee-cards.css"
+import { UserDetailsDialog } from "./UserDetailsDialog"
 
+// Mettre à jour l'interface User pour correspondre aux champs de l'API
 interface User {
   id: number
-  nom: string
-  prenom: string
   email: string
-  created_at: string
-  departement: string
   numTel: string
-  poste: string
   adresse: string
   image?: string
-  cv?: string
   nom_societe: string
+  created_at: string
+  // Nouveaux champs
+  apropos?: string
+  lien_site_web?: string
+  fax?: string
+  domaine_activite?: string
+  role?: string
 }
 
 export function ReviewsTable({ refresh }: { refresh: boolean }) {
@@ -133,6 +136,8 @@ export function ReviewsTable({ refresh }: { refresh: boolean }) {
   if (loading) return <div>Chargement...</div>
   if (error) return <div>{error}</div>
 
+  // Dans le rendu des cartes, remplacer les références aux champs supprimés
+  // et ajouter les nouveaux champs
   return (
     <>
       <div className="cards-grid">
@@ -141,29 +146,17 @@ export function ReviewsTable({ refresh }: { refresh: boolean }) {
             <div className="card-header"></div>
             <div className="avatar-container">
               <Avatar className="user-avatar">
-                <AvatarImage
-                  src={user.image || `/placeholder.svg?height=96&width=96`}
-                  alt={`${user.prenom} ${user.nom}`}
-                />
-                <AvatarFallback className="avatar-fallback">
-                  {user.prenom?.[0]}
-                  {user.nom?.[0]}
-                </AvatarFallback>
+                <AvatarImage src={user.image || `/placeholder.svg?height=96&width=96`} alt={user.nom_societe} />
+                <AvatarFallback className="avatar-fallback">{user.nom_societe?.[0]}</AvatarFallback>
               </Avatar>
             </div>
 
             <CardContent className="card-content">
-              <h3 className="user-name">
-                {user.prenom} {user.nom}
-              </h3>
+              <h3 className="user-name">{user.nom_societe}</h3>
 
-              <Badge className="user-badge">{user.poste || "Non spécifié"}</Badge>
+              <Badge className="user-badge">{user.domaine_activite || "Non spécifié"}</Badge>
 
               <div className="user-details">
-                <div className="detail-row">
-                  <span className="detail-label">Société:</span>
-                  <span className="detail-value">{user.nom_societe || "Non spécifiée"}</span>
-                </div>
                 <div className="detail-row">
                   <span className="detail-label">Email:</span>
                   <span
@@ -234,3 +227,4 @@ export function ReviewsTable({ refresh }: { refresh: boolean }) {
     </>
   )
 }
+

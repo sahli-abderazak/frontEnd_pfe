@@ -14,17 +14,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 interface UserData {
   id: number
   email: string
-  departement?: string
-  nom: string
-  prenom: string
   numTel?: string
   password?: string
-  poste?: string
   adresse?: string
   image?: string
-  cv?: string
   nom_societe?: string
   role?: string
+  // Nouveaux champs
+  apropos?: string
+  lien_site_web?: string
+  fax?: string
+  domaine_activite?: string
 }
 
 interface ProfileEditModalProps {
@@ -39,12 +39,13 @@ const API_BASE_URL = "http://127.0.0.1:8000"
 export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess }: ProfileEditModalProps) {
   const [formData, setFormData] = useState<UserData | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [cvFile, setCvFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [cvFileName, setCvFileName] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvFileName, setCvFileName] = useState<string | null>(null)
   const cvInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -216,13 +217,14 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="prenom">Prénom</Label>
-              <Input id="prenom" name="prenom" value={formData?.prenom || ""} onChange={handleInputChange} required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nom">Nom</Label>
-              <Input id="nom" name="nom" value={formData?.nom || ""} onChange={handleInputChange} required />
+              <Label htmlFor="nom_societe">Nom de l'entreprise</Label>
+              <Input
+                id="nom_societe"
+                name="nom_societe"
+                value={formData?.nom_societe || ""}
+                onChange={handleInputChange}
+                readOnly
+              />
             </div>
 
             <div className="space-y-2">
@@ -243,8 +245,35 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="fax">Fax</Label>
+              <Input id="fax" name="fax" value={formData?.fax || ""} onChange={handleInputChange} />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="adresse">Adresse</Label>
               <Input id="adresse" name="adresse" value={formData?.adresse || ""} onChange={handleInputChange} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lien_site_web">Site Web</Label>
+              <Input
+                id="lien_site_web"
+                name="lien_site_web"
+                type="url"
+                value={formData?.lien_site_web || ""}
+                onChange={handleInputChange}
+                placeholder="https://example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="domaine_activite">Domaine d'activité</Label>
+              <Input
+                id="domaine_activite"
+                name="domaine_activite"
+                value={formData?.domaine_activite || ""}
+                onChange={handleInputChange}
+              />
             </div>
 
             <div className="space-y-2">
@@ -260,21 +289,16 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="cv">CV (PDF)</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  ref={cvInputRef}
-                  onChange={handleCvChange}
-                  accept="application/pdf"
-                  className="hidden"
-                />
-                <Button type="button" variant="outline" onClick={() => cvInputRef.current?.click()}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  {cvFile ? "Changer le CV" : "Télécharger un CV"}
-                </Button>
-                {cvFileName && <span className="text-sm text-gray-600 truncate max-w-[200px]">{cvFileName}</span>}
-              </div>
+              <Label htmlFor="apropos">À propos</Label>
+              <textarea
+                id="apropos"
+                name="apropos"
+                value={formData?.apropos || ""}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Description de votre entreprise"
+              />
             </div>
           </div>
 
@@ -291,3 +315,4 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
     </Dialog>
   )
 }
+

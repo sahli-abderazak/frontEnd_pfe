@@ -414,45 +414,47 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Rechercher par nom de poste..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onFocus={() => debouncedSearchTerm && setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-            className="pl-8"
-          />
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-              {suggestions.map((offre) => (
-                <div
-                  key={offre.id}
-                  className="px-4 py-2 hover:bg-muted cursor-pointer"
-                  onMouseDown={() => handleSelectSuggestion(offre)}
-                >
-                  <div className="font-medium">{offre.poste}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {offre.departement} • {offre.domaine}
+      {currentTabValue === "offre" && (
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher par nom de poste..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => debouncedSearchTerm && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              className="pl-8"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                {suggestions.map((offre) => (
+                  <div
+                    key={offre.id}
+                    className="px-4 py-2 hover:bg-muted cursor-pointer"
+                    onMouseDown={() => handleSelectSuggestion(offre)}
+                  >
+                    <div className="font-medium">{offre.poste}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {offre.departement} • {offre.domaine}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {searchTerm && (
-            <button
-              className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground"
-              onClick={clearSearch}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+                ))}
+              </div>
+            )}
+            {searchTerm && (
+              <button
+                className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground"
+                onClick={clearSearch}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {isSearching && <div className="text-sm text-muted-foreground animate-pulse">Recherche...</div>}
         </div>
-        {isSearching && <div className="text-sm text-muted-foreground animate-pulse">Recherche...</div>}
-      </div>
+      )}
 
       {searchResults ? (
         <div className="space-y-6 px-4 py-6">

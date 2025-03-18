@@ -79,6 +79,8 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isUnarchiveDialogOpen, setIsUnarchiveDialogOpen] = useState(false)
   const [candidatToUnarchive, setCandidatToUnarchive] = useState<number | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [candidatToDelete, setCandidatToDelete] = useState<number | null>(null)
   const isMobile = useMediaQuery("(max-width: 640px)")
 
   useEffect(() => {
@@ -162,6 +164,43 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
     }
   }
 
+  const openDeleteDialog = (candidatId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCandidatToDelete(candidatId)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const deleteCandidat = async () => {
+    if (!candidatToDelete) return
+
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setError("Vous devez être connecté pour supprimer un candidat.")
+        return
+      }
+
+      const response = await fetch(`http://127.0.0.1:8000/api/candidatSupp/${candidatToDelete}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression du candidat")
+      }
+
+      // Mettre à jour l'état pour retirer le candidat du tableau
+      setCandidats((prevCandidats) => prevCandidats.filter((candidat) => candidat.id !== candidatToDelete))
+      setIsDeleteDialogOpen(false)
+      setCandidatToDelete(null)
+    } catch (error) {
+      setError("Erreur lors de la suppression du candidat.")
+    }
+  }
+
   // Fonction pour afficher les détails d'un candidat
   const handleViewDetails = (candidat: Candidat) => {
     setSelectedCandidat(candidat)
@@ -219,21 +258,31 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
               className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full"
             >
               <CardHeader className="pb-2 px-4 sm:px-6">
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
-                    <AvatarFallback className="text-white font-medium">
-                      {getInitials(candidat.nom, candidat.prenom)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
-                      {candidat.prenom} {candidat.nom}
-                    </h3>
-                    <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-                      <Briefcase className="mr-1 h-3 w-3" />
-                      <span className="truncate max-w-[180px] sm:max-w-none">{offre?.poste || "N/A"}</span>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
+                      <AvatarFallback className="text-white font-medium">
+                        {getInitials(candidat.nom, candidat.prenom)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
+                        {candidat.prenom} {candidat.nom}
+                      </h3>
+                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                        <Briefcase className="mr-1 h-3 w-3" />
+                        <span className="truncate max-w-[180px] sm:max-w-none">{offre?.poste || "N/A"}</span>
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full"
+                    onClick={(e) => openDeleteDialog(candidat.id, e)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="pb-2 px-4 sm:px-6 flex-grow">
@@ -338,7 +387,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
                         disabled={unarchiving === candidat.id}
                       >
                         <Undo className="mr-2 h-4 w-4" />
-                        {unarchiving === candidat.id ? "Désarchivage..." : "Désarchiver"}
+                        {unarchiving === candidat.id ? "Désarchivage..." : "Démarquer"}
                       </Button>
                     </div>
                   </>
@@ -516,7 +565,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
                       disabled={unarchiving === selectedCandidat.id}
                     >
                       <Undo className="mr-2 h-4 w-4" />
-                      {unarchiving === selectedCandidat.id ? "Désarchivage..." : "Désarchiver"}
+                      {unarchiving === selectedCandidat.id ? "Désarchivage..." : "Démarquer"}
                     </Button>
                     <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                       Fermer
@@ -541,7 +590,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
                   className="w-full"
                 >
                   <Undo className="mr-2 h-4 w-4" />
-                  {unarchiving === selectedCandidat.id ? "Désarchivage..." : "Désarchiver"}
+                  {unarchiving === selectedCandidat.id ? "Désarchivage..." : "Démarquer"}
                 </Button>
                 <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="w-full">
                   Fermer
@@ -556,8 +605,8 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
       <Dialog open={isUnarchiveDialogOpen} onOpenChange={setIsUnarchiveDialogOpen}>
         <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
-            <DialogTitle>Confirmation de désarchivage</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir désarchiver ce candidat ?</DialogDescription>
+            <DialogTitle>Confirmation de Annulation de marquage</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir démarquer ce candidat ?</DialogDescription>
           </DialogHeader>
           <DialogFooter className={`${isMobile ? "flex-col space-y-2 mt-4" : "flex justify-end gap-3 mt-4"}`}>
             <Button
@@ -573,7 +622,25 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
               className={isMobile ? "w-full" : ""}
             >
               <Undo className="mr-2 h-4 w-4" />
-              {unarchiving === candidatToUnarchive ? "Désarchivage..." : "Désarchiver"}
+              {unarchiving === candidatToUnarchive ? "Désarchivage..." : "Démarquer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmation de suppression */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
+          <DialogHeader>
+            <DialogTitle>Supprimer le candidat</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer définitivement ce candidat ?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2 mt-4" : "flex justify-end gap-3 mt-4"}`}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className={isMobile ? "w-full" : ""}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={deleteCandidat} className={isMobile ? "w-full" : ""}>
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -583,3 +650,4 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 }
 
 export default ArchiveCandidatsTable
+

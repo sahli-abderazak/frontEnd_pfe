@@ -29,8 +29,8 @@ export default function ReviewsPage() {
           <div className="md:col-span-5 lg:col-span-5 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Comptes Archivé</h1>
-                <p className="text-muted-foreground">Suivre les comptes des candidats archivé</p>
+                <h1 className="text-3xl font-bold tracking-tight">Comptes Marquer</h1>
+                <p className="text-muted-foreground">Suivre les candidats Marquer</p>
               </div>
               
             </div>

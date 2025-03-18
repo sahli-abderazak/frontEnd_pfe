@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Pencil, Trash2, Calendar, Clock, ChevronDown, ChevronUp, MoreHorizontal } from "lucide-react"
+import { Pencil, Trash2, Calendar, Clock, ChevronDown, ChevronUp, MoreHorizontal, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { OffreEditDialogExpiree } from "./offre-edit-dialog_Expiree"
 import { useMediaQuery } from "@/app/hooks/use-media-query"
@@ -207,6 +207,11 @@ export function OffreTableValide({ refresh }: { refresh: boolean }) {
     return hoursRemaining <= 24 && hoursRemaining > 0
   }
 
+  // Fonction pour naviguer vers la page des candidats
+  const navigateToCandidats = (offreId: number) => {
+    router.push(`/candidat-offre/${offreId}`)
+  }
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">
@@ -273,6 +278,10 @@ export function OffreTableValide({ refresh }: { refresh: boolean }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigateToCandidats(offre.id)}>
+                            <Users className="h-4 w-4 mr-2" />
+                            Voir candidats
+                          </DropdownMenuItem>
                           {expiringSoon && (
                             <DropdownMenuItem
                               onClick={() => {
@@ -293,6 +302,15 @@ export function OffreTableValide({ refresh }: { refresh: boolean }) {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigateToCandidats(offre.id)}
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      >
+                        <Users className="h-4 w-4 mr-1" />
+                        Voir candidats
+                      </Button>
                       {expiringSoon && (
                         <Button
                           variant="outline"
@@ -450,3 +468,4 @@ export function OffreTableValide({ refresh }: { refresh: boolean }) {
     </div>
   )
 }
+

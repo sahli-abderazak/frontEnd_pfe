@@ -251,7 +251,7 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
         <div className="relative flex-1" ref={searchRef}>
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Rechercher un candidat archivé par nom ou prénom..."
+            placeholder="Rechercher un candidat marquer par nom ou prénom..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
@@ -391,7 +391,7 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
                 )}
                 <Button variant="outline" size="sm" onClick={() => setShowUnarchiveModal(true)}>
                   <Archive className="mr-2 h-4 w-4" />
-                  Désarchiver
+                  Démarquer
                 </Button>
               </div>
             </CardFooter>
@@ -632,10 +632,9 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
       <Dialog open={showUnarchiveModal} onOpenChange={setShowUnarchiveModal}>
         <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
-            <DialogTitle>Désarchiver le candidat</DialogTitle>
+            <DialogTitle>Démarquer le candidat</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir désarchiver ce candidat ? Il sera à nouveau visible dans la liste des candidats
-              actifs.
+              Êtes-vous sûr de vouloir Démarquer ce candidat ? Il sera à nouveau visible dans la liste des candidats.
             </DialogDescription>
           </DialogHeader>
 
@@ -668,12 +667,12 @@ export function ArchiveCandidatsTabs({ refreshTrigger }: { refreshTrigger: boole
               {unarchiveLoading ? (
                 <span className="flex items-center">
                   <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Désarchivage...
+                  Démarquage...
                 </span>
               ) : (
                 <>
                   <Archive className="mr-2 h-4 w-4" />
-                  Désarchiver
+                  Démarquer
                 </>
               )}
             </Button>

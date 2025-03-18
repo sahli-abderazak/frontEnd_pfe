@@ -1,5 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
+import type React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +65,8 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [candidatToArchive, setCandidatToArchive] = useState<number | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [candidatToDelete, setCandidatToDelete] = useState<number | null>(null)
   const isMobile = useMediaQuery("(max-width: 640px)")
 
   useEffect(() => {
@@ -143,6 +147,45 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
     }
   }
 
+  // Fonction pour ouvrir le dialogue de suppression
+  const openDeleteDialog = (candidatId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCandidatToDelete(candidatId)
+    setIsDeleteDialogOpen(true)
+  }
+
+  // Fonction pour supprimer un candidat
+  const deleteCandidat = async () => {
+    if (!candidatToDelete) return
+
+    const token = localStorage.getItem("token")
+    if (!token) {
+      setError("Vous devez être connecté pour supprimer un candidat.")
+      return
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/candidatSupp/${candidatToDelete}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression du candidat")
+      }
+
+      // Mettre à jour l'état pour retirer le candidat du tableau
+      setCandidats((prevCandidats) => prevCandidats.filter((candidat) => candidat.id !== candidatToDelete))
+      setIsDeleteDialogOpen(false)
+      setCandidatToDelete(null)
+    } catch (error) {
+      setError("Erreur lors de la suppression du candidat.")
+    }
+  }
+
   // Fonction pour afficher les détails d'un candidat
   const handleViewDetails = (candidat: Candidat) => {
     setSelectedCandidat(candidat)
@@ -198,21 +241,31 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
             className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full"
           >
             <CardHeader className="pb-2 px-4 sm:px-6">
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
-                  <AvatarFallback className="text-white font-medium">
-                    {getInitials(candidat.nom, candidat.prenom)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
-                    {candidat.prenom} {candidat.nom}
-                  </h3>
-                  <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-                    <Briefcase className="mr-1 h-3 w-3" />
-                    <span className="truncate max-w-[180px] sm:max-w-none">{candidat.offre?.poste}</span>
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
+                    <AvatarFallback className="text-white font-medium">
+                      {getInitials(candidat.nom, candidat.prenom)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
+                      {candidat.prenom} {candidat.nom}
+                    </h3>
+                    <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                      <Briefcase className="mr-1 h-3 w-3" />
+                      <span className="truncate max-w-[180px] sm:max-w-none">{candidat.offre?.poste}</span>
+                    </div>
                   </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 rounded-full"
+                  onClick={(e) => openDeleteDialog(candidat.id, e)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="pb-2 px-4 sm:px-6 flex-grow">
@@ -307,7 +360,7 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
                     )}
                     <Button variant="outline" size="sm" onClick={() => openArchiveDialog(candidat.id)}>
                       <Archive className="mr-2 h-4 w-4" />
-                      Archiver
+                      Marquer
                     </Button>
                   </div>
                 </>
@@ -491,8 +544,8 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
       <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
         <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
-            <DialogTitle>Archiver le candidat</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir archiver ce candidat ?</DialogDescription>
+            <DialogTitle>Marquer le candidat</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir marquer ce candidat ?</DialogDescription>
           </DialogHeader>
           <DialogFooter className={`${isMobile ? "flex-col space-y-2" : "flex space-x-2 justify-end"}`}>
             <Button
@@ -503,7 +556,25 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
               Annuler
             </Button>
             <Button variant="destructive" onClick={archiveCandidat} className={isMobile ? "w-full" : ""}>
-              Archiver
+              Marquer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
+          <DialogHeader>
+            <DialogTitle>Supprimer le candidat</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir supprimer définitivement ce candidat ?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2" : "flex space-x-2 justify-end"}`}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className={isMobile ? "w-full" : ""}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={deleteCandidat} className={isMobile ? "w-full" : ""}>
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -511,3 +582,4 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
     </>
   )
 }
+

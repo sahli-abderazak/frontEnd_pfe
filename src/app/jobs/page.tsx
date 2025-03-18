@@ -38,6 +38,7 @@ interface Offre {
   ville: string
   societe: string
   statut: "urgent" | "normal"
+  created_at: string
 }
 
 interface SearchParams {
@@ -93,12 +94,19 @@ export default function JobsPage() {
     }))
   }
 
+  // Update the fetchOffres function to sort by newest first (LIFO)
   const fetchOffres = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch("http://127.0.0.1:8000/api/offres-candidat")
       const data = await response.json()
-      setOffres(data)
+
+      // Sort by newest first (LIFO)
+      const sortedData = [...data].sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+
+      setOffres(sortedData)
 
       // Extraire tous les titres de poste uniques pour l'autocomplétion
       const uniquePostes = Array.from(new Set(data.map((offre: Offre) => offre.poste)))
@@ -111,6 +119,7 @@ export default function JobsPage() {
     }
   }, [])
 
+  // Update the searchOffres function to handle experience levels correctly
   const searchOffres = useCallback(
     async (params: SearchParams) => {
       setCurrentPage(1) // Réinitialiser à la première page lors d'une nouvelle recherche
@@ -131,8 +140,11 @@ export default function JobsPage() {
         if (selectedDatePublication && selectedDatePublication !== "tous")
           formData.append("datePublication", selectedDatePublication)
 
-        if (selectedExperienceLevel === "plus_de_3ans") {
-          formData.append("niveauExperience_min", "4ans")
+        // Traitement spécial pour le niveau d'expérience
+        if (selectedExperienceLevel === "sans_experience") {
+          formData.append("niveauExperience", "Sans expérience")
+        } else if (selectedExperienceLevel === "plus_10ans") {
+          formData.append("niveauExperience", "+10ans")
         } else if (selectedExperienceLevel && selectedExperienceLevel !== "tous") {
           formData.append("niveauExperience", selectedExperienceLevel)
         }
@@ -247,7 +259,7 @@ export default function JobsPage() {
     setShowFilters(false)
   }
 
-  // Ajouter cette nouvelle fonction pour appliquer tous les filtres ensemble
+  // Update the applyFilters function to correctly handle experience levels
   const applyFilters = () => {
     // Récupérer les types de poste sélectionnés
     const selectedTypes = Object.entries(typesPoste)
@@ -279,8 +291,10 @@ export default function JobsPage() {
     }
 
     // Traitement spécial pour le niveau d'expérience
-    if (selectedExperienceLevel === "plus_de_3ans") {
-      formData.append("niveauExperience_min", "4ans")
+    if (selectedExperienceLevel === "sans_experience") {
+      formData.append("niveauExperience", "Sans expérience")
+    } else if (selectedExperienceLevel === "plus_10ans") {
+      formData.append("niveauExperience", "+10ans")
     } else if (selectedExperienceLevel !== "tous") {
       formData.append("niveauExperience", selectedExperienceLevel)
     }
@@ -309,27 +323,7 @@ export default function JobsPage() {
         return response.json()
       })
       .then((data) => {
-        // Filtrer les résultats côté client pour s'assurer que les filtres sont bien combinés
-        const filteredData = data.filter((offre: Offre) => {
-          let matchesTypePoste = true
-          let matchesTypeTravail = true
-
-          // Vérifier le type de poste
-          if (typePosteParam) {
-            const selectedTypesArray = typePosteParam.split(",")
-            matchesTypePoste = selectedTypesArray.includes(offre.typePoste)
-          }
-
-          // Vérifier le type de travail
-          if (selectedTypeTravail) {
-            matchesTypeTravail = offre.typeTravail === selectedTypeTravail
-          }
-
-          // Retourner true seulement si l'offre correspond à TOUS les critères
-          return matchesTypePoste && matchesTypeTravail
-        })
-
-        setOffres(filteredData)
+        setOffres(data)
         setLoading(false)
         setShowFilters(false) // Fermer le panneau des filtres après l'application
       })
@@ -435,6 +429,7 @@ export default function JobsPage() {
     }
   }
 
+  // Update the handleExperienceLevelChange function to correctly map experience levels
   const handleExperienceLevelChange = (experienceValue: string) => {
     setSelectedExperienceLevel(experienceValue)
 
@@ -455,12 +450,12 @@ export default function JobsPage() {
       if (selectedTypeTravail) formData.append("typeTravail", selectedTypeTravail)
       if (selectedDatePublication !== "tous") formData.append("datePublication", selectedDatePublication)
 
-      // Traitement spécial pour "Plus de 3 ans"
-      if (experienceValue === "plus_de_3ans") {
-        // Utiliser une requête personnalisée pour le backend
-        formData.append("niveauExperience_min", "4ans")
+      // Traitement spécial pour les niveaux d'expérience
+      if (experienceValue === "sans_experience") {
+        formData.append("niveauExperience", "Sans expérience")
+      } else if (experienceValue === "plus_10ans") {
+        formData.append("niveauExperience", "+10ans")
       } else if (experienceValue !== "tous") {
-        // Pour les autres valeurs, utiliser le filtrage standard
         formData.append("niveauExperience", experienceValue)
       }
 
@@ -868,16 +863,6 @@ export default function JobsPage() {
                         </li>
                         <li>
                           <input
-                            id="check-bb"
-                            type="radio"
-                            name="niveauExperience"
-                            checked={selectedExperienceLevel === "1ans"}
-                            onChange={() => handleExperienceLevelChange("1ans")}
-                          />
-                          <label htmlFor="check-bb">1 ans</label>
-                        </li>
-                        <li>
-                          <input
                             id="check-bc"
                             type="radio"
                             name="niveauExperience"
@@ -888,23 +873,33 @@ export default function JobsPage() {
                         </li>
                         <li>
                           <input
-                            id="check-bd"
-                            type="radio"
-                            name="niveauExperience"
-                            checked={selectedExperienceLevel === "3ans"}
-                            onChange={() => handleExperienceLevelChange("3ans")}
-                          />
-                          <label htmlFor="check-bd">3 ans</label>
-                        </li>
-                        <li>
-                          <input
                             id="check-be"
                             type="radio"
                             name="niveauExperience"
-                            checked={selectedExperienceLevel === "plus_de_3ans"}
-                            onChange={() => handleExperienceLevelChange("plus_de_3ans")}
+                            checked={selectedExperienceLevel === "5ans"}
+                            onChange={() => handleExperienceLevelChange("5ans")}
                           />
-                          <label htmlFor="check-be">Plus de 3 ans</label>
+                          <label htmlFor="check-be">5 ans</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-bf"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "7ans"}
+                            onChange={() => handleExperienceLevelChange("7ans")}
+                          />
+                          <label htmlFor="check-bf">7 ans</label>
+                        </li>
+                        <li>
+                          <input
+                            id="check-bg"
+                            type="radio"
+                            name="niveauExperience"
+                            checked={selectedExperienceLevel === "plus_10ans"}
+                            onChange={() => handleExperienceLevelChange("plus_10ans")}
+                          />
+                          <label htmlFor="check-bg">Plus de 10 ans</label>
                         </li>
                       </ul>
                     </div>
@@ -1088,6 +1083,17 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 }
 
 function JobBlock({ offre }: { offre: Offre }) {
+  // Format the date
+  const formatDate = (dateString: string) => {
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+  }
+
   return (
     <Link href={`/jobsDetail/${offre.id}`} legacyBehavior passHref>
       <a className="job-block" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
@@ -1111,14 +1117,22 @@ function JobBlock({ offre }: { offre: Offre }) {
                 <GraduationCap className="icon" /> {offre.niveauEtude}
               </li>
             </ul>
-            <ul className="job-other-info">
-              <li className="time">{offre.typeTravail}</li>
-              <li className="privacy">{offre.typePoste}</li>
-              {offre.statut === "urgent" && <li className="required">Urgent</li>}
-            </ul>
+            <div className="flex justify-between items-center mt-2">
+              <ul className="job-other-info">
+                <li className="time">{offre.typeTravail}</li>
+                <li className="privacy">{offre.typePoste}</li>
+                {offre.statut === "urgent" && <li className="required">Urgent</li>}
+              </ul>
+              <div className="text-sm text-gray-500">
+                <span className="flex items-center">
+                  <Clock3 size={14} className="mr-1" /> Publié le {formatDate(offre.created_at)}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </a>
     </Link>
   )
 }
+

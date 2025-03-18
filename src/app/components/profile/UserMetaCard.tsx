@@ -9,17 +9,17 @@ import ProfileEditModal from "./profile-edit-modal"
 interface UserData {
   id: number
   email: string
-  departement?: string
-  nom: string
-  prenom: string
   numTel?: string
   password?: string
-  poste?: string
   adresse?: string
   image?: string
-  cv?: string
   nom_societe?: string
   role?: string
+  // Nouveaux champs
+  apropos?: string
+  lien_site_web?: string
+  fax?: string
+  domaine_activite?: string
 }
 
 export default function ProfilePage() {
@@ -83,7 +83,7 @@ export default function ProfilePage() {
                     {userData?.image ? (
                       <Image
                         src={userData.image || "/placeholder.svg"}
-                        alt={`${userData?.prenom} ${userData?.nom}`}
+                        alt={userData?.nom_societe || "Entreprise"}
                         width={80}
                         height={80}
                         className="object-cover w-full h-full"
@@ -91,7 +91,7 @@ export default function ProfilePage() {
                     ) : (
                       <Image
                         src="/placeholder.svg?height=80&width=80"
-                        alt="User"
+                        alt="Entreprise"
                         width={80}
                         height={80}
                         className="object-cover w-full h-full"
@@ -100,12 +100,10 @@ export default function ProfilePage() {
                   </div>
                   <div className="order-3 xl:order-2">
                     <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 xl:text-left">
-                      {userData?.prenom} {userData?.nom}
+                      {userData?.nom_societe || "Entreprise"}
                     </h4>
                     <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
-                      <p className="text-sm text-gray-500">{userData?.poste || "Aucun poste spécifié"}</p>
-                      <div className="hidden h-3.5 w-px bg-gray-300 xl:block"></div>
-                      <p className="text-sm text-gray-500">{userData?.departement || "Aucune departement spécifiée"}</p>
+                      <p className="text-sm text-gray-500">{userData?.domaine_activite || "Aucun domaine spécifié"}</p>
                     </div>
                   </div>
                 </div>
@@ -115,7 +113,7 @@ export default function ProfilePage() {
             {/* Informations Personnelles et Adresse */}
             <div className="p-5 border border-gray-200 rounded-2xl lg:p-6">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between mb-6">
-                <h4 className="text-lg font-semibold text-gray-800">Informations Personnelles</h4>
+                <h4 className="text-lg font-semibold text-gray-800">Informations Entreprise</h4>
                 <Button
                   variant="outline"
                   className="w-full lg:w-auto rounded-full"
@@ -127,17 +125,12 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {/* Informations Personnelles */}
+                {/* Informations Entreprise */}
                 <div className="border-b lg:border-b-0 lg:border-r border-gray-200 pb-6 lg:pb-0 lg:pr-6">
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <p className="mb-2 text-xs leading-normal text-gray-500">Prénom</p>
-                      <p className="text-sm font-medium text-gray-800">{userData?.prenom}</p>
-                    </div>
-
-                    <div>
-                      <p className="mb-2 text-xs leading-normal text-gray-500">Nom</p>
-                      <p className="text-sm font-medium text-gray-800">{userData?.nom}</p>
+                      <p className="mb-2 text-xs leading-normal text-gray-500">Nom de l'entreprise</p>
+                      <p className="text-sm font-medium text-gray-800">{userData?.nom_societe || "Non spécifié"}</p>
                     </div>
 
                     <div>
@@ -151,48 +144,51 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <p className="mb-2 text-xs leading-normal text-gray-500">Poste</p>
-                      <p className="text-sm font-medium text-gray-800">{userData?.poste || "Non spécifié"}</p>
+                      <p className="mb-2 text-xs leading-normal text-gray-500">Fax</p>
+                      <p className="text-sm font-medium text-gray-800">{userData?.fax || "Non spécifié"}</p>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-xs leading-normal text-gray-500">Domaine d'activité</p>
+                      <p className="text-sm font-medium text-gray-800">
+                        {userData?.domaine_activite || "Non spécifié"}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Adresse */}
+                {/* Adresse et Site Web */}
                 <div className="pt-6 lg:pt-0 lg:pl-6">
                   <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <p className="mb-2 text-xs leading-normal text-gray-500">Departement</p>
-                      <p className="text-sm font-medium text-gray-800">{userData?.departement || "Non spécifié"}</p>
-                    </div>
-
                     <div>
                       <p className="mb-2 text-xs leading-normal text-gray-500">Adresse</p>
                       <p className="text-sm font-medium text-gray-800">{userData?.adresse || "Non spécifié"}</p>
                     </div>
 
                     <div>
-                      <p className="mb-2 text-xs leading-normal text-gray-500">Entreprise</p>
-                      <p className="text-sm font-medium text-gray-800">{userData?.nom_societe || "Non spécifié"}</p>
+                      <p className="mb-2 text-xs leading-normal text-gray-500">Site Web</p>
+                      {userData?.lien_site_web ? (
+                        <a
+                          href={userData.lien_site_web}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {userData.lien_site_web}
+                        </a>
+                      ) : (
+                        <p className="text-sm font-medium text-gray-800">Non spécifié</p>
+                      )}
                     </div>
 
                     <div>
                       <p className="mb-2 text-xs leading-normal text-gray-500">Rôle</p>
                       <p className="text-sm font-medium text-gray-800">{userData?.role || "Non spécifié"}</p>
                     </div>
+
                     <div>
-                      <p className="mb-2 text-xs leading-normal text-gray-500">CV</p>
-                      {userData?.cv ? (
-                        <a
-                          href={userData.cv}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          Voir CV
-                        </a>
-                      ) : (
-                        <p className="text-sm font-medium text-gray-800">Non spécifié</p>
-                      )}
+                      <p className="mb-2 text-xs leading-normal text-gray-500">À propos</p>
+                      <p className="text-sm font-medium text-gray-800">{userData?.apropos || "Non spécifié"}</p>
                     </div>
                   </div>
                 </div>
@@ -214,3 +210,4 @@ export default function ProfilePage() {
     </main>
   )
 }
+

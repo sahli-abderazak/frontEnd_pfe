@@ -7,17 +7,18 @@ import "../styles/user-dialogs.css"
 
 interface User {
   id: number
-  nom: string
-  prenom: string
   email: string
-  created_at: string
-  departement: string
-  numTel: string
-  poste: string
-  adresse: string
+  numTel?: string
+  adresse?: string
   image?: string
-  cv?: string
-  nom_societe: string
+  nom_societe?: string
+  created_at: string
+  // Nouveaux champs
+  apropos?: string
+  lien_site_web?: string
+  fax?: string
+  domaine_activite?: string
+  role?: string
 }
 
 interface UserDetailsDialogProps {
@@ -37,7 +38,7 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="user-details-dialog">
+      <DialogContent className="user-details-dialog sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle className="dialog-title">Détails du recruteur</DialogTitle>
         </DialogHeader>
@@ -45,35 +46,30 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
         <div className="user-details-content">
           {/* Profile header with image and name */}
           <div className="profile-header">
-            <div className="profile-image-container">
+            <div className="profile-image-container" style={{ width: "100px", height: "100px" }}>
               {user.image ? (
                 <Image
                   src={user.image || "/placeholder.svg"}
-                  alt={`Photo de ${user.nom}`}
-                  width={120}
-                  height={120}
+                  alt={`Logo de ${user.nom_societe}`}
+                  width={100}
+                  height={100}
                   unoptimized
                   className="profile-image"
                 />
               ) : (
-                <div className="profile-image-placeholder">
-                  {user.prenom?.[0]}
-                  {user.nom?.[0]}
-                </div>
+                <div className="profile-image-placeholder">{user.nom_societe?.[0]}</div>
               )}
             </div>
-            <h2 className="profile-name">
-              {user.prenom} {user.nom}
-            </h2>
-            <div className="profile-position">{user.poste || "Poste non spécifié"}</div>
-            <div className="profile-company">{user.nom_societe || "Société non spécifiée"}</div>
+            <h2 className="profile-name text-lg">{user.nom_societe || "Entreprise"}</h2>
+            <div className="profile-position text-sm">{user.domaine_activite || "Domaine non spécifié"}</div>
+            <div className="profile-company text-xs">{user.role || "Rôle non spécifié"}</div>
           </div>
 
           {/* User information */}
-          <div className="info-section">
-            <h3 className="section-title">Informations de contact</h3>
+          <div className="info-section p-3">
+            <h3 className="section-title text-sm mb-2">Informations de contact</h3>
 
-            <div className="info-grid">
+            <div className="info-grid gap-2">
               <div className="info-item">
                 <div className="info-icon">📧</div>
                 <div className="info-content">
@@ -96,10 +92,10 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
               </div>
 
               <div className="info-item">
-                <div className="info-icon">🏢</div>
+                <div className="info-icon">📠</div>
                 <div className="info-content">
-                  <Label className="info-label">Département</Label>
-                  <div className="info-value">{user.departement || "Non renseigné"}</div>
+                  <Label className="info-label">Fax</Label>
+                  <div className="info-value">{user.fax || "Non renseigné"}</div>
                 </div>
               </div>
 
@@ -119,14 +115,24 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
                 </div>
               </div>
 
-              {user.cv && (
+              {user.lien_site_web && (
                 <div className="info-item">
-                  <div className="info-icon">📄</div>
+                  <div className="info-icon">🌐</div>
                   <div className="info-content">
-                    <Label className="info-label">CV</Label>
-                    <a href={user.cv} target="_blank" rel="noopener noreferrer" className="cv-link">
-                      Voir le CV
+                    <Label className="info-label">Site Web</Label>
+                    <a href={user.lien_site_web} target="_blank" rel="noopener noreferrer" className="cv-link">
+                      Visiter le site
                     </a>
+                  </div>
+                </div>
+              )}
+
+              {user.apropos && (
+                <div className="info-item">
+                  <div className="info-icon">📝</div>
+                  <div className="info-content">
+                    <Label className="info-label">À propos</Label>
+                    <div className="info-value">{user.apropos}</div>
                   </div>
                 </div>
               )}
@@ -137,3 +143,4 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
     </Dialog>
   )
 }
+

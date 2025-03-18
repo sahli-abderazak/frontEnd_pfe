@@ -7,9 +7,27 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Undo, Mail, Phone, MapPin, Briefcase, Calendar, Building, User } from "lucide-react"
+import { Eye, Undo, Mail, Phone, MapPin, Briefcase, Calendar, Building, User, Globe, FileText } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+
+// Mise à jour de l'interface User pour correspondre aux champs de l'API
+interface User {
+  id: number
+  email: string
+  numTel?: string
+  adresse?: string
+  image?: string
+  nom_societe?: string
+  created_at: string
+  // Nouveaux champs
+  apropos?: string
+  lien_site_web?: string
+  fax?: string
+  domaine_activite?: string
+  role?: string
+  archived?: boolean
+}
 
 interface ArchiveTableProps {
   refresh: boolean
@@ -115,18 +133,18 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
     setIsDetailsOpen(true)
   }
 
-  // Fonction pour télécharger le CV
-  const handleDownloadCV = (cvUrl: string) => {
-    window.open(cvUrl, "_blank")
+  // Fonction pour ouvrir le site web
+  const handleOpenWebsite = (url: string) => {
+    window.open(url, "_blank")
   }
 
   // Fonction pour obtenir les initiales
-  const getInitials = (nom: string, prenom: string) => {
-    return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase()
+  const getInitials = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : "E"
   }
 
   // Fonction pour obtenir une couleur basée sur le nom
-  const getColorClass = (nom: string) => {
+  const getColorClass = (name: string) => {
     const colors = [
       "bg-blue-500",
       "bg-emerald-500",
@@ -137,7 +155,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
       "bg-teal-500",
       "bg-pink-500",
     ]
-    const index = nom.charCodeAt(0) % colors.length
+    const index = name ? name.charCodeAt(0) % colors.length : 0
     return colors[index]
   }
 
@@ -174,18 +192,18 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
           >
             <CardHeader className="pb-2">
               <div className="flex items-center space-x-4">
-                <Avatar className={`h-12 w-12 ${getColorClass(user.nom)}`}>
+                <Avatar className={`h-12 w-12 ${getColorClass(user.nom_societe || "")}`}>
                   <AvatarFallback className="text-white font-medium">
-                    {getInitials(user.nom, user.prenom)}
+                    {getInitials(user.nom_societe || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
                   <h3 className="font-semibold text-lg leading-none tracking-tight">
-                    {user.prenom} {user.nom}
+                    {user.nom_societe || "Entreprise"}
                   </h3>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Briefcase className="mr-1 h-3 w-3" />
-                    {user.poste || "N/A"}
+                    {user.domaine_activite || "N/A"}
                   </div>
                 </div>
               </div>
@@ -205,12 +223,12 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                 </div>
                 <div className="flex items-center">
                   <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{user.numTel}</span>
+                  <span>{user.numTel || "Non spécifié"}</span>
                 </div>
-                {user.nom_societe && (
+                {user.fax && (
                   <div className="flex items-center">
-                    <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{user.nom_societe}</span>
+                    <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>Fax: {user.fax}</span>
                   </div>
                 )}
                 {user.adresse && (
@@ -222,7 +240,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant="outline" className="bg-blue-50">
-                  {user.departement}
+                  {user.role || "Recruteur"}
                 </Badge>
                 <Badge variant="outline" className="bg-amber-50">
                   <Calendar className="mr-1 h-3 w-3" />
@@ -236,10 +254,10 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                 Détails
               </Button>
               <div className="flex gap-2">
-                {user.cv && (
-                  <Button variant="outline" size="sm" onClick={() => handleDownloadCV(user.cv)}>
-                    <User className="mr-2 h-4 w-4" />
-                    CV
+                {user.lien_site_web && (
+                  <Button variant="outline" size="sm" onClick={() => handleOpenWebsite(user.lien_site_web || "")}>
+                    <Globe className="mr-2 h-4 w-4" />
+                    Site Web
                   </Button>
                 )}
                 <Button
@@ -267,30 +285,28 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Détails de l'utilisateur</DialogTitle>
-              <DialogDescription>Informations complètes de l'utilisateur archivé</DialogDescription>
+              <DialogTitle>Détails de l'entreprise</DialogTitle>
+              <DialogDescription>Informations complètes de l'entreprise archivée</DialogDescription>
             </DialogHeader>
 
             <div className="flex items-center space-x-4 mb-6">
-              <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom)}`}>
+              <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom_societe || "")}`}>
                 <AvatarFallback className="text-white text-xl font-medium">
-                  {getInitials(selectedUser.nom, selectedUser.prenom)}
+                  {getInitials(selectedUser.nom_societe || "")}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-bold">
-                  {selectedUser.prenom} {selectedUser.nom}
-                </h2>
+                <h2 className="text-2xl font-bold">{selectedUser.nom_societe || "Entreprise"}</h2>
                 <p className="text-muted-foreground flex items-center">
                   <Briefcase className="mr-1 h-4 w-4" />
-                  {selectedUser.poste} • {selectedUser.departement}
+                  {selectedUser.domaine_activite || "Domaine non spécifié"} • {selectedUser.role || "Recruteur"}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informations personnelles</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">Informations de contact</h3>
                 <div className="space-y-3">
                   <div className="flex items-start">
                     <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
@@ -310,9 +326,18 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                     <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Téléphone</p>
-                      <p>{selectedUser.numTel}</p>
+                      <p>{selectedUser.numTel || "Non spécifié"}</p>
                     </div>
                   </div>
+                  {selectedUser.fax && (
+                    <div className="flex items-start">
+                      <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Fax</p>
+                        <p>{selectedUser.fax}</p>
+                      </div>
+                    </div>
+                  )}
                   {selectedUser.adresse && (
                     <div className="flex items-start">
                       <MapPin className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
@@ -331,26 +356,33 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                   <div className="flex items-start">
                     <Building className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="font-medium">Département</p>
-                      <p>{selectedUser.departement}</p>
+                      <p className="font-medium">Domaine d'activité</p>
+                      <p>{selectedUser.domaine_activite || "Non spécifié"}</p>
                     </div>
                   </div>
-                  {selectedUser.nom_societe && (
+                  <div className="flex items-start">
+                    <User className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="font-medium">Rôle</p>
+                      <p>{selectedUser.role || "Recruteur"}</p>
+                    </div>
+                  </div>
+                  {selectedUser.lien_site_web && (
                     <div className="flex items-start">
-                      <Building className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <Globe className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="font-medium">Société</p>
-                        <p>{selectedUser.nom_societe}</p>
+                        <p className="font-medium">Site Web</p>
+                        <a
+                          href={selectedUser.lien_site_web}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {selectedUser.lien_site_web}
+                        </a>
                       </div>
                     </div>
                   )}
-                  <div className="flex items-start">
-                    <Briefcase className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Poste</p>
-                      <p>{selectedUser.poste}</p>
-                    </div>
-                  </div>
                   <div className="flex items-start">
                     <Calendar className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -362,11 +394,23 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
               </div>
             </div>
 
+            {selectedUser.apropos && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-2 mb-3">À propos</h3>
+                <div className="flex items-start">
+                  <FileText className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p>{selectedUser.apropos}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between mt-6">
-              {selectedUser.cv && (
-                <Button onClick={() => handleDownloadCV(selectedUser.cv)}>
-                  <User className="mr-2 h-4 w-4" />
-                  Voir CV
+              {selectedUser.lien_site_web && (
+                <Button onClick={() => handleOpenWebsite(selectedUser.lien_site_web || "")}>
+                  <Globe className="mr-2 h-4 w-4" />
+                  Visiter le site
                 </Button>
               )}
 
@@ -387,7 +431,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmer la désarchivation</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir désarchiver cet utilisateur ?</DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir désarchiver cette entreprise ?</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
@@ -414,3 +458,4 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
 }
 
 export default ArchiveTable
+
