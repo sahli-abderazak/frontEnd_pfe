@@ -3,10 +3,9 @@
 import type React from "react"
 import { MessageSquare } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Search, Bell } from "lucide-react"
+import { Search, Bell, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { MobileSidebar } from "./mobile-sidebar"
 
@@ -19,20 +18,22 @@ interface Notification {
   created_at: string
 }
 
-interface User {
+interface UserProps {
   nom: string
   prenom: string
   image: string | null
+  nom_societe?: string
+  role?: string
 }
 
 export function DashboardHeader() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserProps | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     // Fetch user info
-    fetch("http://localhost:8000/api/user/info", {
+    fetch("http://localhost:8000/api/users/profile", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -272,6 +273,32 @@ export function DashboardHeader() {
     }
   }
 
+  // Ajouter la fonction handleLogout
+  const handleLogout = () => {
+    // Appel à l'API de déconnexion
+    fetch("http://localhost:8000/api/logout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Accept: "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then(() => {
+        // Supprimer le token localement
+        localStorage.removeItem("token")
+
+        // Rediriger vers la page d'accueil
+        window.location.href = "/"
+      })
+      .catch((error) => {
+        console.error("Erreur lors de la déconnexion :", error)
+        // En cas d'erreur, on supprime quand même le token et on redirige
+        localStorage.removeItem("token")
+        window.location.href = "/"
+      })
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -287,7 +314,6 @@ export function DashboardHeader() {
 
         {/* Search - hidden on mobile, shown on md and up */}
 
-
         <div className="flex items-center gap-2">
           {/* Mobile search trigger */}
           <Button variant="ghost" size="icon" className="md:hidden">
@@ -295,7 +321,12 @@ export function DashboardHeader() {
           </Button>
 
           {/* Message Icon */}
-          <Button variant="ghost" size="icon" className="relative" onClick={() => (window.location.href = "/chatAdmin")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={() => (window.location.href = "/chatAdmin")}
+          >
             <MessageSquare className="h-5 w-5" />
           </Button>
 
@@ -396,10 +427,37 @@ export function DashboardHeader() {
               </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <a href="/">Déconnexion</a>
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-64 p-0 rounded-xl shadow-lg border-0">
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-t-xl">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user?.image || "/placeholder.svg?height=60&width=60"}
+                    alt="Avatar"
+                    className="rounded-full object-cover h-14 w-14 border-2 border-white shadow-md dark:border-gray-800"
+                  />
+                  <div>
+                    <h3 className="font-bold text-lg text-purple-800 dark:text-purple-300">
+                      {user?.prenom} {user?.nom}
+                    </h3>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">{user?.nom_societe}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2">
+                {/* <DropdownMenuItem className="flex items-center gap-2 p-2 cursor-pointer rounded-md">
+                  <User className="h-4 w-4" />
+                  <span>Mon profil</span>
+                </DropdownMenuItem> */}
+
+                <DropdownMenuItem
+                  className="flex items-center gap-2 p-2 cursor-pointer rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Déconnexion</span>
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -100,7 +100,7 @@ export default function FeaturedJobs() {
               <div className="flex items-start gap-4 mb-4">
                 <div>
                   <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
-                    <Link href={`/jobs/${job.id}`}>{job.poste}</Link>
+                    {job.poste}
                   </h3>
                   <p className="text-sm text-muted-foreground">{job.societe}</p>
                 </div>

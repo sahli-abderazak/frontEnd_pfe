@@ -233,7 +233,7 @@ export default function ProfileEditModal({ isOpen, onClose, userData, onSuccess 
                 type="email"
                 value={formData?.email || ""}
                 onChange={handleInputChange}
-                required
+                readOnly
               />
             </div>
 
