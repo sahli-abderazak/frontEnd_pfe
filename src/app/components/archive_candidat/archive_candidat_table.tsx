@@ -79,8 +79,9 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isUnarchiveDialogOpen, setIsUnarchiveDialogOpen] = useState(false)
   const [candidatToUnarchive, setCandidatToUnarchive] = useState<number | null>(null)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [candidatToDelete, setCandidatToDelete] = useState<number | null>(null)
+  const [selectedCandidats, setSelectedCandidats] = useState<number[]>([])
+  const [selectAll, setSelectAll] = useState(false)
+  const [isBulkUnarchiveDialogOpen, setIsBulkUnarchiveDialogOpen] = useState(false)
   const isMobile = useMediaQuery("(max-width: 640px)")
 
   useEffect(() => {
@@ -123,6 +124,61 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
     }
   }
 
+  // Fonction pour gérer la sélection d'un candidat
+  const handleSelectCandidat = (candidatId: number, isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedCandidats((prev) => [...prev, candidatId])
+    } else {
+      setSelectedCandidats((prev) => prev.filter((id) => id !== candidatId))
+    }
+  }
+
+  // Fonction pour gérer la sélection de tous les candidats
+  const handleSelectAll = (isChecked: boolean) => {
+    setSelectAll(isChecked)
+    if (isChecked) {
+      setSelectedCandidats(candidats.map((candidat) => candidat.id))
+    } else {
+      setSelectedCandidats([])
+    }
+  }
+
+  // Fonction pour désarchiver les candidats sélectionnés
+  const unarchiveSelectedCandidats = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setError("Vous devez être connecté pour désarchiver des candidats.")
+        return
+      }
+
+      // Créer un tableau de promesses pour chaque désarchivage
+      const unarchivePromises = selectedCandidats.map((candidatId) =>
+        fetch(`http://127.0.0.1:8000/api/candidats_desarchiver/${candidatId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      )
+
+      // Attendre que tous les désarchivages soient terminés
+      await Promise.all(unarchivePromises)
+
+      // Mettre à jour l'état pour retirer les candidats désarchivés
+      setCandidats((prevCandidats) => prevCandidats.filter((candidat) => !selectedCandidats.includes(candidat.id)))
+
+      // Réinitialiser les sélections
+      setSelectedCandidats([])
+      setSelectAll(false)
+      setIsBulkUnarchiveDialogOpen(false)
+    } catch (error) {
+      console.error("Erreur de désarchivation en masse:", error)
+      setError("Erreur lors de la désarchivation des candidats.")
+    }
+  }
+
   const handleUnarchive = async (candidatId: number) => {
     setCandidatToUnarchive(candidatId)
     setIsUnarchiveDialogOpen(true)
@@ -161,43 +217,6 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
       setError(error instanceof Error ? error.message : "Erreur lors de la désarchivation du candidat")
     } finally {
       setUnarchiving(null)
-    }
-  }
-
-  const openDeleteDialog = (candidatId: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setCandidatToDelete(candidatId)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const deleteCandidat = async () => {
-    if (!candidatToDelete) return
-
-    try {
-      const token = localStorage.getItem("token")
-      if (!token) {
-        setError("Vous devez être connecté pour supprimer un candidat.")
-        return
-      }
-
-      const response = await fetch(`http://127.0.0.1:8000/api/candidatSupp/${candidatToDelete}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la suppression du candidat")
-      }
-
-      // Mettre à jour l'état pour retirer le candidat du tableau
-      setCandidats((prevCandidats) => prevCandidats.filter((candidat) => candidat.id !== candidatToDelete))
-      setIsDeleteDialogOpen(false)
-      setCandidatToDelete(null)
-    } catch (error) {
-      setError("Erreur lors de la suppression du candidat.")
     }
   }
 
@@ -249,6 +268,31 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 
   return (
     <>
+      {/* Barre d'actions pour les opérations groupées */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="select-all"
+            checked={selectAll}
+            onChange={(e) => handleSelectAll(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          <label htmlFor="select-all" className="text-sm font-medium">
+            Sélectionner tout ({candidats.length})
+          </label>
+        </div>
+
+        {selectedCandidats.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">{selectedCandidats.length} candidat(s) sélectionné(s)</span>
+            <Button variant="outline" size="sm" onClick={() => setIsBulkUnarchiveDialogOpen(true)}>
+              <Undo className="mr-2 h-4 w-4" />
+              Démarquer
+            </Button>
+          </div>
+        )}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {candidats.map((candidat) => {
           const offre = candidat.offre
@@ -260,11 +304,20 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
               <CardHeader className="pb-2 px-4 sm:px-6">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-3 sm:space-x-4">
-                    <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
-                      <AvatarFallback className="text-white font-medium">
-                        {getInitials(candidat.nom, candidat.prenom)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedCandidats.includes(candidat.id)}
+                        onChange={(e) => handleSelectCandidat(candidat.id, e.target.checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute top-0 left-0 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary z-10"
+                      />
+                      <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
+                        <AvatarFallback className="text-white font-medium">
+                          {getInitials(candidat.nom, candidat.prenom)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
                     <div className="space-y-1">
                       <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
                         {candidat.prenom} {candidat.nom}
@@ -275,14 +328,6 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-full"
-                    onClick={(e) => openDeleteDialog(candidat.id, e)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="pb-2 px-4 sm:px-6 flex-grow">
@@ -364,7 +409,7 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
                       disabled={unarchiving === candidat.id}
                     >
                       <Undo className="h-3 w-3 sm:mr-2" />
-                      <span className="hidden sm:inline">{unarchiving === candidat.id ? "..." : "Désarchiver"}</span>
+                      <span className="hidden sm:inline">{unarchiving === candidat.id ? "..." : "Démarquer"}</span>
                     </Button>
                   </div>
                 ) : (
@@ -605,8 +650,8 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
       <Dialog open={isUnarchiveDialogOpen} onOpenChange={setIsUnarchiveDialogOpen}>
         <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
-            <DialogTitle>Confirmation de Annulation de marquage</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir démarquer ce candidat ?</DialogDescription>
+            <DialogTitle>Confirmation de désarchivage</DialogTitle>
+            <DialogDescription>Êtes-vous sûr de vouloir désarchiver ce candidat ?</DialogDescription>
           </DialogHeader>
           <DialogFooter className={`${isMobile ? "flex-col space-y-2 mt-4" : "flex justify-end gap-3 mt-4"}`}>
             <Button
@@ -627,20 +672,25 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Dialog de confirmation de suppression */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      {/* Bulk Unarchive Confirmation Dialog */}
+      <Dialog open={isBulkUnarchiveDialogOpen} onOpenChange={setIsBulkUnarchiveDialogOpen}>
         <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
           <DialogHeader>
-            <DialogTitle>Supprimer le candidat</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir supprimer définitivement ce candidat ?</DialogDescription>
+            <DialogTitle>Démarquer les candidats sélectionnés</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir démarquer les {selectedCandidats.length} candidats sélectionnés ?
+            </DialogDescription>
           </DialogHeader>
-          <DialogFooter className={`${isMobile ? "flex-col space-y-2 mt-4" : "flex justify-end gap-3 mt-4"}`}>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className={isMobile ? "w-full" : ""}>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2" : "flex space-x-2 justify-end"}`}>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkUnarchiveDialogOpen(false)}
+              className={isMobile ? "w-full" : ""}
+            >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={deleteCandidat} className={isMobile ? "w-full" : ""}>
-              Supprimer
+            <Button variant="default" onClick={unarchiveSelectedCandidats} className={isMobile ? "w-full" : ""}>
+              Démarquer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -650,4 +700,3 @@ const ArchiveCandidatsTable: React.FC<ArchiveCandidatsTableProps> = ({ refresh }
 }
 
 export default ArchiveCandidatsTable
-

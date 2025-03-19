@@ -236,7 +236,7 @@ export function DashboardHeader() {
               Département: <span className="font-medium">{notification.data.department}</span>
             </div>
             <div>
-              Ajouté par: <span className="font-medium">{notification.data.recruiter_name}</span>
+              Ajouté par: <span className="font-medium">{notification.data.campany}</span>
             </div>
           </div>
         )

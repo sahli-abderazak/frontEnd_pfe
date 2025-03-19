@@ -53,6 +53,7 @@ interface Candidat {
   cv: string
   offre_id: number
   offre: Offre
+  offres?: Offre[] // Add this line
   created_at: string
 }
 
@@ -62,13 +63,20 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCandidat, setSelectedCandidat] = useState<Candidat | null>(null)
+  const [selectedCandidatOffres, setSelectedCandidatOffres] = useState<Offre[]>([])
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [candidatToArchive, setCandidatToArchive] = useState<number | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [candidatToDelete, setCandidatToDelete] = useState<number | null>(null)
+  const [selectedCandidats, setSelectedCandidats] = useState<number[]>([])
+  const [selectAll, setSelectAll] = useState(false)
   const isMobile = useMediaQuery("(max-width: 640px)")
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
+  const [isBulkArchiveDialogOpen, setIsBulkArchiveDialogOpen] = useState(false)
+  const [loadingOffres, setLoadingOffres] = useState(false)
 
+  // Modifier la fonction fetchCandidats pour mieux regrouper les candidats par email
   useEffect(() => {
     const fetchCandidats = async () => {
       try {
@@ -96,7 +104,43 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
         }
 
         const data = await response.json()
-        setCandidats(data)
+        console.log("Données brutes de l'API:", data)
+
+        // Regrouper les candidats par email
+        const candidatsMap = {}
+
+        data.forEach((candidat) => {
+          // S'assurer que l'offre est un objet complet
+          const offreComplete = {
+            id: candidat.offre?.id || candidat.offre_id,
+            departement: candidat.offre?.departement || "",
+            domaine: candidat.offre?.domaine || "",
+            datePublication: candidat.offre?.datePublication || "",
+            poste: candidat.offre?.poste || "Non spécifié",
+          }
+
+          if (!candidatsMap[candidat.email]) {
+            // Premier candidat avec cet email - créer une nouvelle entrée
+            candidatsMap[candidat.email] = {
+              ...candidat,
+              offres: [offreComplete],
+            }
+          } else {
+            // Ajouter l'offre au candidat existant
+            // Vérifier si l'offre existe déjà pour éviter les doublons
+            const offreExiste = candidatsMap[candidat.email].offres.some((o) => o.id === offreComplete.id)
+
+            if (!offreExiste) {
+              candidatsMap[candidat.email].offres.push(offreComplete)
+            }
+          }
+        })
+
+        // Convertir l'objet en tableau
+        const uniqueCandidats = Object.values(candidatsMap)
+        console.log("Candidats regroupés:", uniqueCandidats)
+
+        setCandidats(uniqueCandidats)
         setError(null)
       } catch (error) {
         console.error("Erreur de récupération des candidats:", error)
@@ -108,6 +152,43 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
 
     fetchCandidats()
   }, [refresh, router])
+
+  // Nouvelle fonction pour récupérer toutes les offres d'un candidat par email
+  const fetchOffresParCandidat = async (email: string) => {
+    try {
+      setLoadingOffres(true)
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setError("Vous devez être connecté pour voir les offres.")
+        return []
+      }
+
+      const response = await fetch(`http://127.0.0.1:8000/api/candidats/offres/${email}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Aucune offre trouvée pour le candidat avec l'email ${email}`)
+          return []
+        }
+        throw new Error(`Erreur lors de la récupération des offres pour ${email}`)
+      }
+
+      const data = await response.json()
+      console.log(`Offres pour ${email}:`, data)
+      return data
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des offres pour ${email}:`, error)
+      return []
+    } finally {
+      setLoadingOffres(false)
+    }
+  }
 
   // Fonction pour ouvrir le dialogue d'archivage
   const openArchiveDialog = (candidatId: number) => {
@@ -186,10 +267,103 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
     }
   }
 
+  // Fonction pour gérer la sélection d'un candidat
+  const handleSelectCandidat = (candidatId: number, isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedCandidats((prev) => [...prev, candidatId])
+    } else {
+      setSelectedCandidats((prev) => prev.filter((id) => id !== candidatId))
+    }
+  }
+
+  // Fonction pour gérer la sélection de tous les candidats
+  const handleSelectAll = (isChecked: boolean) => {
+    setSelectAll(isChecked)
+    if (isChecked) {
+      setSelectedCandidats(candidats.map((candidat) => candidat.id))
+    } else {
+      setSelectedCandidats([])
+    }
+  }
+
+  // Fonction pour supprimer les candidats sélectionnés
+  const deleteSelectedCandidats = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      setError("Vous devez être connecté pour supprimer des candidats.")
+      return
+    }
+
+    try {
+      // Créer un tableau de promesses pour chaque suppression
+      const deletePromises = selectedCandidats.map((candidatId) =>
+        fetch(`http://127.0.0.1:8000/api/candidatSupp/${candidatId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      )
+
+      // Attendre que toutes les suppressions soient terminées
+      await Promise.all(deletePromises)
+
+      // Mettre à jour l'état pour retirer les candidats supprimés
+      setCandidats((prevCandidats) => prevCandidats.filter((candidat) => !selectedCandidats.includes(candidat.id)))
+
+      // Réinitialiser les sélections
+      setSelectedCandidats([])
+      setSelectAll(false)
+      setIsDeleteDialogOpen(false)
+    } catch (error) {
+      setError("Erreur lors de la suppression des candidats.")
+    }
+  }
+
+  // Fonction pour marquer les candidats sélectionnés
+  const archiveSelectedCandidats = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      setError("Vous devez être connecté pour marquer des candidats.")
+      return
+    }
+
+    try {
+      // Créer un tableau de promesses pour chaque archivage
+      const archivePromises = selectedCandidats.map((candidatId) =>
+        fetch(`http://127.0.0.1:8000/api/candidats/archiver/${candidatId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      )
+
+      // Attendre que tous les archivages soient terminées
+      await Promise.all(archivePromises)
+
+      // Mettre à jour l'état pour retirer les candidats archivés
+      setCandidats((prevCandidats) => prevCandidats.filter((candidat) => !selectedCandidats.includes(candidat.id)))
+
+      // Réinitialiser les sélections
+      setSelectedCandidats([])
+      setSelectAll(false)
+      setIsArchiveDialogOpen(false)
+    } catch (error) {
+      setError("Erreur lors du marquage des candidats.")
+    }
+  }
+
   // Fonction pour afficher les détails d'un candidat
-  const handleViewDetails = (candidat: Candidat) => {
+  const handleViewDetails = async (candidat: Candidat) => {
     setSelectedCandidat(candidat)
     setIsDetailsOpen(true)
+
+    // Récupérer toutes les offres pour ce candidat
+    const offres = await fetchOffresParCandidat(candidat.email)
+    setSelectedCandidatOffres(offres)
   }
 
   // Fonction pour télécharger le CV
@@ -218,6 +392,11 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
     return colors[index]
   }
 
+  // Fonction pour ouvrir Gmail avec l'adresse email
+  const openGmail = (email: string) => {
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`, "_blank")
+  }
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">
@@ -234,6 +413,36 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
 
   return (
     <>
+      {/* Barre d'actions pour les opérations groupées */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="select-all"
+            checked={selectAll}
+            onChange={(e) => handleSelectAll(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          <label htmlFor="select-all" className="text-sm font-medium">
+            Sélectionner tout ({candidats.length})
+          </label>
+        </div>
+
+        {selectedCandidats.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">{selectedCandidats.length} candidat(s) sélectionné(s)</span>
+            <Button variant="outline" size="sm" onClick={() => setIsBulkArchiveDialogOpen(true)}>
+              <Archive className="mr-2 h-4 w-4" />
+              Marquer
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteDialogOpen(true)}>
+              <X className="mr-2 h-4 w-4" />
+              Supprimer
+            </Button>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {candidats.map((candidat) => (
           <Card
@@ -243,18 +452,41 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
             <CardHeader className="pb-2 px-4 sm:px-6">
               <div className="flex justify-between items-start">
                 <div className="flex items-center space-x-3 sm:space-x-4">
-                  <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
-                    <AvatarFallback className="text-white font-medium">
-                      {getInitials(candidat.nom, candidat.prenom)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedCandidats.includes(candidat.id)}
+                      onChange={(e) => handleSelectCandidat(candidat.id, e.target.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute top-0 left-0 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary z-10"
+                    />
+                    <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 ${getColorClass(candidat.nom)}`}>
+                      <AvatarFallback className="text-white font-medium">
+                        {getInitials(candidat.nom, candidat.prenom)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                   <div className="space-y-1">
                     <h3 className="font-semibold text-base sm:text-lg leading-none tracking-tight truncate max-w-[180px] sm:max-w-none">
                       {candidat.prenom} {candidat.nom}
                     </h3>
-                    <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-                      <Briefcase className="mr-1 h-3 w-3" />
-                      <span className="truncate max-w-[180px] sm:max-w-none">{candidat.offre?.poste}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                        <Briefcase className="mr-1 h-3 w-3" />
+                        <span className="font-medium">Offres ({candidat.offres?.length || 1}):</span>
+                      </div>
+                      <div className="pl-4 space-y-1">
+                        {(candidat.offres || [candidat.offre]).slice(0, 2).map((offer, idx) => (
+                          <div key={idx} className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-none">
+                            • {offer.poste || "Non spécifié"}
+                          </div>
+                        ))}
+                        {candidat.offres?.length > 2 && (
+                          <div className="text-xs text-muted-foreground">
+                            • et {candidat.offres.length - 2} autre(s)...
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -272,7 +504,14 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
               <div className="grid gap-2 text-xs sm:text-sm">
                 <div className="flex items-center">
                   <Mail className="mr-2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                  <a href={`mailto:${candidat.email}`} className="text-blue-600 hover:underline truncate">
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      openGmail(candidat.email)
+                    }}
+                    className="text-blue-600 hover:underline truncate"
+                  >
                     {candidat.email}
                   </a>
                 </div>
@@ -434,7 +673,11 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
                       <div>
                         <p className="font-medium">Email</p>
                         <a
-                          href={`mailto:${selectedCandidat.email}`}
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            openGmail(selectedCandidat.email)
+                          }}
                           className="text-blue-600 hover:underline break-all"
                         >
                           {selectedCandidat.email}
@@ -492,22 +735,39 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
                 </div>
               </div>
 
+              {/* Modifier la section qui affiche les offres dans la fenêtre modale */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Détails de l'offre</h3>
-                <div className={`grid ${isMobile ? "grid-cols-1 gap-3" : "grid-cols-2 gap-4"}`}>
-                  <div>
-                    <p className="font-medium">Poste</p>
-                    <p>{selectedCandidat.offre?.poste}</p>
+                <h3 className="text-lg font-semibold border-b pb-2">
+                  Offres postulées ({selectedCandidatOffres.length || selectedCandidat.offres?.length || 1})
+                </h3>
+
+                {loadingOffres ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                   </div>
-                  <div>
-                    <p className="font-medium">Département</p>
-                    <p>{selectedCandidat.offre?.departement}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(selectedCandidatOffres.length > 0
+                      ? selectedCandidatOffres
+                      : selectedCandidat.offres || [selectedCandidat.offre]
+                    ).map((offre, index) => (
+                      <div key={index} className="p-3 border rounded-md">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="font-medium">{offre.poste || "Non spécifié"}</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          
+                          <div className="text-muted-foreground col-span-2">
+                            Publication:{" "}
+                            {offre.datePublication
+                              ? new Date(offre.datePublication).toLocaleDateString("fr-FR")
+                              : "Non spécifié"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="font-medium">Domaine</p>
-                    <p>{selectedCandidat.offre?.domaine}</p>
-                  </div>
-                </div>
+                )}
               </div>
 
               {selectedCandidat.cv && (
@@ -579,7 +839,54 @@ export function CandidatsTable({ refresh }: { refresh: boolean }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
+          <DialogHeader>
+            <DialogTitle>Supprimer les candidats sélectionnés</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer définitivement les {selectedCandidats.length} candidats sélectionnés ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2" : "flex space-x-2 justify-end"}`}>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkDeleteDialogOpen(false)}
+              className={isMobile ? "w-full" : ""}
+            >
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={deleteSelectedCandidats} className={isMobile ? "w-full" : ""}>
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Archive Confirmation Dialog */}
+      <Dialog open={isBulkArchiveDialogOpen} onOpenChange={setIsBulkArchiveDialogOpen}>
+        <DialogContent className={`${isMobile ? "w-[90%] max-w-none" : "sm:max-w-md"}`}>
+          <DialogHeader>
+            <DialogTitle>Marquer les candidats sélectionnés</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir marquer les {selectedCandidats.length} candidats sélectionnés ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className={`${isMobile ? "flex-col space-y-2" : "flex space-x-2 justify-end"}`}>
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkArchiveDialogOpen(false)}
+              className={isMobile ? "w-full" : ""}
+            >
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={archiveSelectedCandidats} className={isMobile ? "w-full" : ""}>
+              Marquer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
-

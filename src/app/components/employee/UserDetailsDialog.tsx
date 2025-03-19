@@ -128,7 +128,7 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
               )}
 
               {user.apropos && (
-                <div className="info-item">
+                <div className="info-item col-span-full">
                   <div className="info-icon">📝</div>
                   <div className="info-content">
                     <Label className="info-label">À propos</Label>
@@ -143,4 +143,3 @@ export function UserDetailsDialog({ user, isOpen, onClose }: UserDetailsDialogPr
     </Dialog>
   )
 }
-

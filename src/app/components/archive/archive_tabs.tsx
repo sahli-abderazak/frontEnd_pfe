@@ -7,23 +7,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Undo, Mail, Phone, MapPin, Briefcase, Calendar, Building, User, Search } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Eye, Undo, Mail, Phone, MapPin, Globe, Calendar, Building, Search, FileText } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import ArchiveTable from "./archive_table"
 
 interface UserType {
   id: number
-  nom: string
-  prenom: string
   email: string
   numTel: string
-  poste: string
-  departement: string
-  adresse?: string
-  nom_societe?: string
-  cv?: string
+  adresse: string
+  role: string
+  image: string | null
+  archived: boolean
+  nom_societe: string
+  active: boolean
+  code_verification: string | null
+  apropos: string | null
+  lien_site_web: string | null
+  fax: string | null
+  domaine_activite: string | null
   created_at: string
 }
 
@@ -100,7 +104,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   // Sélection d'un recruteur dans le dropdown
   const handleSelectCandidat = (user: UserType) => {
     setSelectedUser(user)
-    setSearchQuery(user.nom_societe || "") // Utiliser le nom de société au lieu du nom/prénom
+    setSearchQuery(user.nom_societe || "")
     setShowDropdown(false)
   }
 
@@ -148,11 +152,6 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
       setUnarchiving(null)
       setUserToUnarchive(null)
     }
-  }
-
-  const handleDownloadCV = (cvUrl: string) => {
-    // Ouvrir le CV dans un nouvel onglet
-    window.open(cvUrl, "_blank")
   }
 
   // Fonctions utilitaires
@@ -210,10 +209,19 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                 onClick={() => handleSelectCandidat(user)}
               >
-                <Avatar className={`h-8 w-8 ${getColorClass(user.nom_societe || "")}`}>
-                  <AvatarFallback className="text-white text-xs">{getInitials(user.nom_societe || "")}</AvatarFallback>
-                </Avatar>
-                <div className="font-medium">{user.nom_societe || "Entreprise"}</div>
+                {user.image ? (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.image} alt={user.nom_societe} />
+                    <AvatarFallback className={`text-white text-xs ${getColorClass(user.nom_societe)}`}>
+                      {getInitials(user.nom_societe)}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Avatar className={`h-8 w-8 ${getColorClass(user.nom_societe)}`}>
+                    <AvatarFallback className="text-white text-xs">{getInitials(user.nom_societe)}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="font-medium">{user.nom_societe}</div>
               </div>
             ))}
           </div>
@@ -225,18 +233,25 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col mb-6">
           <CardHeader className="pb-2">
             <div className="flex items-center space-x-4">
-              <Avatar className={`h-12 w-12 ${getColorClass(selectedUser.nom_societe || "")}`}>
-                <AvatarFallback className="text-white font-medium">
-                  {getInitials(selectedUser.nom_societe || "")}
-                </AvatarFallback>
-              </Avatar>
+              {selectedUser.image ? (
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={selectedUser.image} alt={selectedUser.nom_societe} />
+                  <AvatarFallback className={`text-white font-medium ${getColorClass(selectedUser.nom_societe)}`}>
+                    {getInitials(selectedUser.nom_societe)}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <Avatar className={`h-12 w-12 ${getColorClass(selectedUser.nom_societe)}`}>
+                  <AvatarFallback className="text-white font-medium">
+                    {getInitials(selectedUser.nom_societe)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div className="space-y-1">
-                <h3 className="font-semibold text-lg leading-none tracking-tight">
-                  {selectedUser.nom_societe || "Entreprise"}
-                </h3>
+                <h3 className="font-semibold text-lg leading-none tracking-tight">{selectedUser.nom_societe}</h3>
                 <div className="flex items-center text-sm text-muted-foreground">
-                  <Briefcase className="mr-1 h-3 w-3" />
-                  {selectedUser.departement || "N/A"}
+                  <Building className="mr-1 h-3 w-3" />
+                  {selectedUser.domaine_activite || "N/A"}
                 </div>
               </div>
             </div>
@@ -258,31 +273,47 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                 <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
                 <span>{selectedUser.numTel}</span>
               </div>
-              <div className="flex items-center">
-                <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>
-                  {selectedUser.prenom} {selectedUser.nom}
-                </span>
-              </div>
+              {selectedUser.fax && (
+                <div className="flex items-center">
+                  <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span>Fax: {selectedUser.fax}</span>
+                </div>
+              )}
               {selectedUser.adresse && (
                 <div className="flex items-center">
                   <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span className="truncate">{selectedUser.adresse}</span>
                 </div>
               )}
-              <div className="flex items-center">
-                <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>{selectedUser.departement}</span>
-              </div>
+              {selectedUser.lien_site_web && (
+                <div className="flex items-center">
+                  <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <a
+                    href={selectedUser.lien_site_web}
+                    className="text-blue-600 hover:underline truncate"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {selectedUser.lien_site_web}
+                  </a>
+                </div>
+              )}
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Badge variant="outline" className="bg-blue-50">
-                {selectedUser.departement}
-              </Badge>
+              {selectedUser.domaine_activite && (
+                <Badge variant="outline" className="bg-blue-50">
+                  {selectedUser.domaine_activite}
+                </Badge>
+              )}
               <Badge variant="outline" className="bg-amber-50">
                 <Calendar className="mr-1 h-3 w-3" />
                 {formatDate(selectedUser.created_at)}
               </Badge>
+              {!selectedUser.active && (
+                <Badge variant="outline" className="bg-red-50">
+                  Inactif
+                </Badge>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex justify-between pt-2 mt-auto">
@@ -290,23 +321,15 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
               <Eye className="mr-2 h-4 w-4" />
               Détails
             </Button>
-            <div className="flex gap-2">
-              {selectedUser.cv && (
-                <Button variant="outline" size="sm" onClick={() => handleDownloadCV(selectedUser.cv)}>
-                  <User className="mr-2 h-4 w-4" />
-                  CV
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => confirmUnarchive(selectedUser.id)}
-                disabled={unarchiving === selectedUser.id}
-              >
-                <Undo className="mr-2 h-4 w-4" />
-                {unarchiving === selectedUser.id ? "Désarchivage..." : "Désarchiver"}
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => confirmUnarchive(selectedUser.id)}
+              disabled={unarchiving === selectedUser.id}
+            >
+              <Undo className="mr-2 h-4 w-4" />
+              {unarchiving === selectedUser.id ? "Désarchivage..." : "Désarchiver"}
+            </Button>
           </CardFooter>
         </Card>
       )}
@@ -338,16 +361,27 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
             </DialogHeader>
 
             <div className="flex items-center space-x-4 mb-6">
-              <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom_societe || "")}`}>
-                <AvatarFallback className="text-white text-xl font-medium">
-                  {getInitials(selectedUser.nom_societe || "")}
-                </AvatarFallback>
-              </Avatar>
+              {selectedUser.image ? (
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser.image} alt={selectedUser.nom_societe} />
+                  <AvatarFallback
+                    className={`text-white text-xl font-medium ${getColorClass(selectedUser.nom_societe)}`}
+                  >
+                    {getInitials(selectedUser.nom_societe)}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom_societe)}`}>
+                  <AvatarFallback className="text-white text-xl font-medium">
+                    {getInitials(selectedUser.nom_societe)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div>
-                <h2 className="text-2xl font-bold">{selectedUser.nom_societe || "Entreprise"}</h2>
+                <h2 className="text-2xl font-bold">{selectedUser.nom_societe}</h2>
                 <p className="text-muted-foreground flex items-center">
-                  <Briefcase className="mr-1 h-4 w-4" />
-                  {selectedUser.departement || "Département non spécifié"}
+                  <Building className="mr-1 h-4 w-4" />
+                  {selectedUser.domaine_activite || "Domaine non spécifié"}
                 </p>
               </div>
             </div>
@@ -356,15 +390,6 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Informations de contact</h3>
                 <div className="space-y-3">
-                  <div className="flex items-start">
-                    <User className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Contact</p>
-                      <p>
-                        {selectedUser.prenom} {selectedUser.nom}
-                      </p>
-                    </div>
-                  </div>
                   <div className="flex items-start">
                     <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -386,6 +411,15 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                       <p>{selectedUser.numTel}</p>
                     </div>
                   </div>
+                  {selectedUser.fax && (
+                    <div className="flex items-start">
+                      <FileText className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Fax</p>
+                        <p>{selectedUser.fax}</p>
+                      </div>
+                    </div>
+                  )}
                   {selectedUser.adresse && (
                     <div className="flex items-start">
                       <MapPin className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
@@ -401,20 +435,31 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Informations professionnelles</h3>
                 <div className="space-y-3">
-                  <div className="flex items-start">
-                    <Building className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Département</p>
-                      <p>{selectedUser.departement || "Non spécifié"}</p>
+                  {selectedUser.domaine_activite && (
+                    <div className="flex items-start">
+                      <Building className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Domaine d'activité</p>
+                        <p>{selectedUser.domaine_activite}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Briefcase className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="font-medium">Poste</p>
-                      <p>{selectedUser.poste || "Non spécifié"}</p>
+                  )}
+                  {selectedUser.lien_site_web && (
+                    <div className="flex items-start">
+                      <Globe className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <p className="font-medium">Site web</p>
+                        <a
+                          href={selectedUser.lien_site_web}
+                          className="text-blue-600 hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {selectedUser.lien_site_web}
+                        </a>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex items-start">
                     <Calendar className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -426,14 +471,14 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
               </div>
             </div>
 
-            <div className="flex justify-between mt-6">
-              {selectedUser.cv && (
-                <Button onClick={() => handleDownloadCV(selectedUser.cv)}>
-                  <User className="mr-2 h-4 w-4" />
-                  Voir CV
-                </Button>
-              )}
+            {selectedUser.apropos && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-2 mb-3">À propos</h3>
+                <p className="text-sm text-muted-foreground">{selectedUser.apropos}</p>
+              </div>
+            )}
 
+            <div className="flex justify-between mt-6">
               <Button onClick={() => confirmUnarchive(selectedUser.id)} disabled={unarchiving === selectedUser.id}>
                 <Undo className="mr-2 h-4 w-4" />
                 {unarchiving === selectedUser.id ? "Désarchivage..." : "Désarchiver"}

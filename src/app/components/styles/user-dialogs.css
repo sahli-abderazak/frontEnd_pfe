@@ -137,6 +137,11 @@
   transform: translateY(-1px);
 }
 
+/* Style pour le champ "À propos" qui s'étend sur toute la largeur */
+.info-item.col-span-full {
+  grid-column: 1 / -1;
+}
+
 .info-icon {
   font-size: 1.25rem;
   width: 2rem;
@@ -165,6 +170,12 @@
   font-size: 0.875rem;
   color: var(--text-primary);
   word-break: break-word;
+}
+
+/* Style spécifique pour le texte "À propos" */
+.col-span-full .info-value {
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
 .cv-link {

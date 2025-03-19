@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import Image from "next/image"
-// import { Building, Mail, MapPin } from 'lucide-react'
+import { Globe } from "lucide-react" // Import the Globe icon for website links
 
 import "../styles/recruiters-carousel.css"
 
@@ -11,6 +11,7 @@ interface Recruiter {
   image: string | null
   domaine_activite: string
   apropos: string
+  lien_site_web: string | null // Added the website link property
 }
 
 export default function RecruitersSection() {
@@ -170,6 +171,19 @@ export default function RecruitersSection() {
                   <div className="recruiter-description mt-2">
                     <p className="text-sm text-muted-foreground line-clamp-2">{recruiter.apropos}</p>
                   </div>
+                  {recruiter.lien_site_web && (
+                    <div className="mt-3 flex items-center">
+                      <Globe className="h-4 w-4 text-muted-foreground mr-1" />
+                      <a
+                        href={recruiter.lien_site_web}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline truncate"
+                      >
+                        {recruiter.lien_site_web.replace(/^https?:\/\/(www\.)?/, "")}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -189,4 +203,3 @@ export default function RecruitersSection() {
     </section>
   )
 }
-

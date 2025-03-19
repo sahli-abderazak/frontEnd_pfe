@@ -240,7 +240,7 @@ export default function NotificationsContent() {
             Département: <span className="font-medium">{notification.data.department}</span>
           </div>
           <div>
-            Ajouté par: <span className="font-medium">{notification.data.recruiter_name}</span>
+            Ajouté par: <span className="font-medium">{notification.data.company}</span>
           </div>
         </div>
       )
