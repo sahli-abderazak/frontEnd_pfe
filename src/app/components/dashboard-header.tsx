@@ -3,7 +3,7 @@
 import type React from "react"
 import { MessageSquare } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Search, Bell, User, Settings, LogOut } from "lucide-react"
+import { Search, Bell, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
@@ -236,7 +236,7 @@ export function DashboardHeader() {
               Département: <span className="font-medium">{notification.data.department}</span>
             </div>
             <div>
-              Ajouté par: <span className="font-medium">{notification.data.campany}</span>
+              Ajouté par: <span className="font-medium">{notification.data.company}</span>
             </div>
           </div>
         )
