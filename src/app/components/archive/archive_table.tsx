@@ -7,7 +7,20 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Undo, Mail, Phone, MapPin, Briefcase, Calendar, Building, User, Globe, FileText } from "lucide-react"
+import {
+  Eye,
+  Undo,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Calendar,
+  Building,
+  User,
+  Globe,
+  FileText,
+  VoicemailIcon as Fax,
+} from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
@@ -225,12 +238,6 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                   <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>{user.numTel || "Non spécifié"}</span>
                 </div>
-                {user.fax && (
-                  <div className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>Fax: {user.fax}</span>
-                  </div>
-                )}
                 {user.adresse && (
                   <div className="flex items-center">
                     <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -253,23 +260,15 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                 <Eye className="mr-2 h-4 w-4" />
                 Détails
               </Button>
-              <div className="flex gap-2">
-                {user.lien_site_web && (
-                  <Button variant="outline" size="sm" onClick={() => handleOpenWebsite(user.lien_site_web || "")}>
-                    <Globe className="mr-2 h-4 w-4" />
-                    Site Web
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => confirmUnarchive(user.id)}
-                  disabled={unarchiving === user.id}
-                >
-                  <Undo className="mr-2 h-4 w-4" />
-                  {unarchiving === user.id ? "Désarchivage..." : "Désarchiver"}
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => confirmUnarchive(user.id)}
+                disabled={unarchiving === user.id}
+              >
+                <Undo className="mr-2 h-4 w-4" />
+                {unarchiving === user.id ? "Désarchivage..." : "Désarchiver"}
+              </Button>
             </CardFooter>
           </Card>
         ))}
@@ -331,7 +330,7 @@ const ArchiveTable: React.FC<ArchiveTableProps> = ({ refresh }) => {
                   </div>
                   {selectedUser.fax && (
                     <div className="flex items-start">
-                      <Phone className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                      <Fax className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
                         <p className="font-medium">Fax</p>
                         <p>{selectedUser.fax}</p>

@@ -25,10 +25,12 @@ import {
   CheckCircle2,
   Pencil,
   Trash2,
+  Users,
 } from "lucide-react"
 
 import { OffreEditDialog } from "./offre-edit-dialog"
 import { OffreEditDialogExpiree } from "./offre-edit-dialog_Expiree"
+import { useRouter } from "next/navigation"
 
 // Type pour les offres
 interface Offre {
@@ -61,6 +63,7 @@ type Notification = {
 }
 
 export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState<Offre[] | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -379,6 +382,11 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     addNotification("Offre mise à jour avec succès.", "success")
   }
 
+  // Fonction pour naviguer vers la page des candidats
+  const navigateToCandidats = (offreId: number) => {
+    router.push(`/candidat-offre/${offreId}`)
+  }
+
   return (
     <div className="space-y-4 w-full">
       {/* Notifications */}
@@ -535,6 +543,18 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          {/* Bouton "Voir candidats" pour les offres validées */}
+                          {offre.valider === 1 && !isExpired && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigateToCandidats(offre.id)}
+                              className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                            >
+                              <Users className="h-4 w-4" />
+                              Voir candidats
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -778,3 +798,4 @@ export function OffreTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     </div>
   )
 }
+

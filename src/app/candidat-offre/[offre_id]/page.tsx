@@ -95,7 +95,16 @@ export default function CandidatOffrePage({ params }: { params: Promise<{ offre_
 
         const data = await response.json()
         console.log("Données des candidats:", data) // Pour déboguer
-        setCandidats(data)
+
+        // Trier les candidats en mode LIFO (Last In, First Out)
+        // Utiliser date_candidature ou created_at pour le tri
+        const sortedCandidats = [...data].sort((a, b) => {
+          const dateA = new Date(a.date_candidature || a.created_at || 0).getTime()
+          const dateB = new Date(b.date_candidature || b.created_at || 0).getTime()
+          return dateB - dateA // Ordre décroissant pour LIFO
+        })
+
+        setCandidats(sortedCandidats)
 
         // Extraire les informations de l'offre du premier candidat s'il existe
         if (data.length > 0 && data[0].offre) {

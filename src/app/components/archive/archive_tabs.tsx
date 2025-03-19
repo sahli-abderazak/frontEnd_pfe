@@ -59,7 +59,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     }
   }, [searchQuery])
 
-  // Recherche de recruteurs archivés
+  // Recherche de recruteurs archivés par nom de société
   const searchRecruiters = async (letter: string) => {
     if (!letter.trim()) {
       setSearchResults([])
@@ -100,7 +100,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   // Sélection d'un recruteur dans le dropdown
   const handleSelectCandidat = (user: UserType) => {
     setSelectedUser(user)
-    setSearchQuery(`${user.prenom} ${user.nom}`) // Garder le nom dans la barre de recherche
+    setSearchQuery(user.nom_societe || "") // Utiliser le nom de société au lieu du nom/prénom
     setShowDropdown(false)
   }
 
@@ -156,11 +156,15 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
   }
 
   // Fonctions utilitaires
-  const getInitials = (nom: string, prenom: string) => {
-    return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase()
+  const getInitials = (nomSociete: string) => {
+    if (!nomSociete) return "E"
+    // Prendre les deux premières lettres du nom de société ou une seule si le nom est court
+    return nomSociete.substring(0, Math.min(2, nomSociete.length)).toUpperCase()
   }
 
-  const getColorClass = (nom: string) => {
+  const getColorClass = (nomSociete: string) => {
+    if (!nomSociete) return "bg-gray-500"
+
     const colors = [
       "bg-blue-500",
       "bg-emerald-500",
@@ -171,7 +175,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
       "bg-teal-500",
       "bg-pink-500",
     ]
-    const index = nom.charCodeAt(0) % colors.length
+    const index = nomSociete.charCodeAt(0) % colors.length
     return colors[index]
   }
 
@@ -190,7 +194,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Rechercher un recruteur archivé..."
+            placeholder="Rechercher une entreprise archivée..."
             value={searchQuery}
             onChange={handleSearchChange}
             className="pl-10 w-full"
@@ -206,12 +210,10 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                 className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                 onClick={() => handleSelectCandidat(user)}
               >
-                <Avatar className={`h-8 w-8 ${getColorClass(user.nom)}`}>
-                  <AvatarFallback className="text-white text-xs">{getInitials(user.nom, user.prenom)}</AvatarFallback>
+                <Avatar className={`h-8 w-8 ${getColorClass(user.nom_societe || "")}`}>
+                  <AvatarFallback className="text-white text-xs">{getInitials(user.nom_societe || "")}</AvatarFallback>
                 </Avatar>
-                <div className="font-medium">
-                  {user.prenom} {user.nom}
-                </div>
+                <div className="font-medium">{user.nom_societe || "Entreprise"}</div>
               </div>
             ))}
           </div>
@@ -223,18 +225,18 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col mb-6">
           <CardHeader className="pb-2">
             <div className="flex items-center space-x-4">
-              <Avatar className={`h-12 w-12 ${getColorClass(selectedUser.nom)}`}>
+              <Avatar className={`h-12 w-12 ${getColorClass(selectedUser.nom_societe || "")}`}>
                 <AvatarFallback className="text-white font-medium">
-                  {getInitials(selectedUser.nom, selectedUser.prenom)}
+                  {getInitials(selectedUser.nom_societe || "")}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-1">
                 <h3 className="font-semibold text-lg leading-none tracking-tight">
-                  {selectedUser.prenom} {selectedUser.nom}
+                  {selectedUser.nom_societe || "Entreprise"}
                 </h3>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Briefcase className="mr-1 h-3 w-3" />
-                  {selectedUser.poste || "N/A"}
+                  {selectedUser.departement || "N/A"}
                 </div>
               </div>
             </div>
@@ -256,12 +258,12 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                 <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
                 <span>{selectedUser.numTel}</span>
               </div>
-              {selectedUser.nom_societe && (
-                <div className="flex items-center">
-                  <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{selectedUser.nom_societe}</span>
-                </div>
-              )}
+              <div className="flex items-center">
+                <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>
+                  {selectedUser.prenom} {selectedUser.nom}
+                </span>
+              </div>
               {selectedUser.adresse && (
                 <div className="flex items-center">
                   <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -331,31 +333,38 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Détails de l'utilisateur</DialogTitle>
-              <DialogDescription>Informations complètes de l'utilisateur archivé</DialogDescription>
+              <DialogTitle>Détails de l'entreprise</DialogTitle>
+              <DialogDescription>Informations complètes de l'entreprise archivée</DialogDescription>
             </DialogHeader>
 
             <div className="flex items-center space-x-4 mb-6">
-              <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom)}`}>
+              <Avatar className={`h-16 w-16 ${getColorClass(selectedUser.nom_societe || "")}`}>
                 <AvatarFallback className="text-white text-xl font-medium">
-                  {getInitials(selectedUser.nom, selectedUser.prenom)}
+                  {getInitials(selectedUser.nom_societe || "")}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-bold">
-                  {selectedUser.prenom} {selectedUser.nom}
-                </h2>
+                <h2 className="text-2xl font-bold">{selectedUser.nom_societe || "Entreprise"}</h2>
                 <p className="text-muted-foreground flex items-center">
                   <Briefcase className="mr-1 h-4 w-4" />
-                  {selectedUser.poste} • {selectedUser.departement}
+                  {selectedUser.departement || "Département non spécifié"}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">Informations personnelles</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">Informations de contact</h3>
                 <div className="space-y-3">
+                  <div className="flex items-start">
+                    <User className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="font-medium">Contact</p>
+                      <p>
+                        {selectedUser.prenom} {selectedUser.nom}
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex items-start">
                     <Mail className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
@@ -396,23 +405,14 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
                     <Building className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Département</p>
-                      <p>{selectedUser.departement}</p>
+                      <p>{selectedUser.departement || "Non spécifié"}</p>
                     </div>
                   </div>
-                  {selectedUser.nom_societe && (
-                    <div className="flex items-start">
-                      <Building className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="font-medium">Société</p>
-                        <p>{selectedUser.nom_societe}</p>
-                      </div>
-                    </div>
-                  )}
                   <div className="flex items-start">
                     <Briefcase className="mr-3 h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Poste</p>
-                      <p>{selectedUser.poste}</p>
+                      <p>{selectedUser.poste || "Non spécifié"}</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -451,7 +451,7 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmer la désarchivation</DialogTitle>
-            <DialogDescription>Êtes-vous sûr de vouloir désarchiver cet utilisateur ?</DialogDescription>
+            <DialogDescription>Êtes-vous sûr de vouloir désarchiver cette entreprise ?</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
@@ -476,3 +476,4 @@ export function ReviewsTabs({ refreshTrigger }: { refreshTrigger: boolean }) {
     </div>
   )
 }
+
